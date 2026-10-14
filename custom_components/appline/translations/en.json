@@ -130,6 +130,42 @@
       },
       "bins_next": {
         "name": "Next collection"
+      },
+      "home_job_days": {
+        "name": "{job}"
+      },
+      "home_overdue": {
+        "name": "Overdue jobs"
+      },
+      "home_soon": {
+        "name": "Jobs due soon"
+      },
+      "plant_water": {
+        "name": "Needs water"
+      },
+      "plant_feed": {
+        "name": "Needs feeding"
+      },
+      "plant_repot": {
+        "name": "Needs repotting"
+      },
+      "plant_prune": {
+        "name": "Needs pruning"
+      },
+      "plants_today": {
+        "name": "Plant jobs today"
+      },
+      "car_details": {
+        "name": "Details"
+      },
+      "cook_timers": {
+        "name": "Timers running"
+      },
+      "cook_timer_next": {
+        "name": "Next timer ends"
+      },
+      "cook_today": {
+        "name": "Today's meals"
       }
     },
     "binary_sensor": {
@@ -144,6 +180,12 @@
       },
       "bins_put_out": {
         "name": "Put out tonight"
+      },
+      "home_attention": {
+        "name": "Needs attention"
+      },
+      "cook_timer_done": {
+        "name": "Timer finished"
       }
     },
     "calendar": {
@@ -170,6 +212,15 @@
       },
       "bin_calendar": {
         "name": "Bin days"
+      },
+      "home_calendar": {
+        "name": "Home jobs"
+      },
+      "plant_calendar": {
+        "name": "Plant care"
+      },
+      "cook_calendar": {
+        "name": "Meals"
       }
     },
     "button": {
@@ -178,6 +229,24 @@
       },
       "car_due_renew": {
         "name": "{due} renewed"
+      },
+      "home_job_done": {
+        "name": "{job} done"
+      },
+      "home_job_later": {
+        "name": "{job} later"
+      },
+      "plant_water_done": {
+        "name": "Watered"
+      },
+      "plant_feed_done": {
+        "name": "Fed"
+      },
+      "plant_not_yet": {
+        "name": "Not yet"
+      },
+      "bins_out": {
+        "name": "They're out"
       }
     },
     "todo": {

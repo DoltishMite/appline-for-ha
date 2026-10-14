@@ -26,7 +26,10 @@ class ApplineButton(ApplineEntity, ButtonEntity):
         user = await self.hass.auth.async_get_user(uid) if uid else None
         by = self.coordinator.name_for_user(uid, user.name if user else None)   # the app name linked in Who's who, if any
         now_ms, act = int(time.time() * 1000), t.data
-        await self.coordinator.async_change(act["target"], lambda item: mod.press(item, act, by, now_ms, new_id()))
+        # one thing (act["target"]), or the same thing in several people's copies (act["targets"]: Binline's bins out, for everyone
+        # in the household who has those bins, so none of them is reminded)
+        for target in act.get("targets") or [act["target"]]:
+            await self.coordinator.async_change(target, lambda item: mod.press(item, act, by, now_ms, new_id()))
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ApplineConfigEntry, async_add_entities) -> None:

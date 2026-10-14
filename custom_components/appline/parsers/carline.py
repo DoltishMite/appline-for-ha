@@ -27,6 +27,10 @@ KIND = {"mot": ("🔧", "MOT"), "tax": ("🪪", "Road tax"), "insurance": ("🛡
         "parking": ("🅿️", "Parking permit"), "other": ("📌", "Other")}
 LOGK = {"service", "mot", "repair", "tyres", "tax", "insurance", "breakdown", "parts", "wash", "parking", "fuel", "charge", "other"}
 ANNIV = {"tax", "insurance", "breakdown", "parking", "lease"}
+# car.html SPECS (the Details tab): key → label
+SPECS = {"make": "Make", "model": "Model", "year": "Year", "colour": "Colour", "engine": "Engine", "gearbox": "Gearbox", "vin": "VIN / chassis",
+         "tyres": "Tyre size", "pressures": "Tyre pressures", "oil": "Oil", "fuelcap": "Tank / battery", "wipers": "Wiper blades", "bulbs": "Bulbs",
+         "radio": "Radio / alarm code", "keys": "Spare key", "insurer": "Insurer and policy", "breakdown": "Breakdown cover", "garage": "Garage"}
 ICONS = {"mot": "mdi:car-wrench", "tax": "mdi:card-account-details", "insurance": "mdi:shield-car", "service": "mdi:oil",
          "breakdown": "mdi:tow-truck", "warranty": "mdi:file-certificate", "lease": "mdi:file-document", "parking": "mdi:parking"}
 
@@ -132,6 +136,11 @@ def _emit(ents: list[dict], now: datetime, out: Parsed, app_name: str | None) ->
         r = readings(c)
         out.add(Thing(f"{dev}.odo", dev, SENSOR, DISTANCE, "car_mileage", round(r[-1]["miles"]) if r else None, {}, {"as_of": r[-1]["date"] if r else None}, "mdi:counter"))
         out.add(Thing(f"{dev}.attention", dev, BINARY, PROBLEM, "car_attention", bool(attention), {}, {"due": attention}))
+        # the Details tab and notes: the registration as the state, every detail filled in (and the notes) as attributes
+        specs = c.get("specs") if isinstance(c.get("specs"), dict) else {}
+        details = {label: str(specs[k]) for k, label in SPECS.items() if specs.get(k)}
+        out.add(Thing(f"{dev}.details", dev, SENSOR, "text", "car_details", (c.get("reg") or " ".join(x for x in (specs.get("make"), specs.get("model")) if x) or cname)[:255], {},
+                      {"fuel": c.get("fuel"), **details, "notes": str(c.get("notes") or "") or None}, "mdi:card-text-outline"))
     out.add(Thing(f"{APP}.calendar", APP, CALENDAR, EVENTS, "car_calendar", None, icon="mdi:car-clock", app=APP, data={"items": cal}))
 
 

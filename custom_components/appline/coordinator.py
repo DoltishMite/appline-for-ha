@@ -170,7 +170,8 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
 
     # ---------- saving a change made in Home Assistant ----------
     async def async_change(self, target: list, change: Callable[[dict], bool]) -> None:
-        """target: ["link", person, app, item id] or ["shared", copy id, app]; change(item) edits it in place (False: nothing to do)."""
+        """target: ["link", person, app, item id] or ["shared", copy id, app]; change(item) edits it in place (False: nothing to do).
+        ["link", person, app, None, key]: change(list) edits a whole saved list, e.g. a log (missing: an empty one)."""
         kind = target[0]
         keys = self.people.get(target[1]) if kind == "link" else self.shared.get(target[1])
         mod = PARSERS.get(target[2])
@@ -181,7 +182,16 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
             if not v:
                 raise HomeAssistantError("Its copy has gone from the apps' server")
             obj = await self._open(keys, doc)
-            if kind == "link":
+            if kind == "link" and len(target) > 4 and target[3] is None:
+                try:
+                    data = obj["apps"][target[2]]["data"]
+                except (KeyError, TypeError) as err:
+                    raise HomeAssistantError("It isn't in that person's link any more") from err
+                whole = json.loads(data.get(target[4]) or "[]")
+                if not isinstance(whole, list) or not change(whole):
+                    return
+                data[target[4]] = json.dumps(whole, ensure_ascii=False)
+            elif kind == "link":
                 try:
                     data = obj["apps"][target[2]]["data"]
                     items = json.loads(data[mod.LIST_KEY])

@@ -7,7 +7,7 @@ Brings the apps at [launcher.hedgepig.uk](https://launcher.hedgepig.uk) into Hom
 - **Two-way.** Tick a task off from a dashboard or an automation, or add an appointment from a pet's calendar, and it shows in the app.
 - **Apps in the sidebar.** Pick apps to show in Home Assistant's sidebar.
 
-Apps so far: **Petline**, **Countline**, **Dayline**, **Renewline**, **Listline** (as Home Assistant to-do lists), **Carline** and **Binline**. More are coming.
+Apps so far: **Petline**, **Countline**, **Dayline**, **Renewline**, **Listline** (as Home Assistant to-do lists), **Carline**, **Binline**, **Homeline**, **Plantline** and **Cookline**. More are coming.
 
 ## Install (HACS)
 1. HACS → ⋮ → **Custom repositories** → `https://github.com/DoltishMite/appline-for-ha`, type **Integration** → Add.
@@ -61,8 +61,11 @@ Tick it from an automation: `action: button.press` with `target: { entity_id: bu
 | Countline | per countdown: *Name* (days until it; a repeating one moves on to its next date as in the app) and *Name* date (a timestamp); a **Countdowns** calendar |
 | Dayline | per birthday or yearly date: *Name's birthday* (days until, `turning` the age); a **Calendar** with those and Dayline's own events (repeats, multi-day, times) |
 | Renewline | per item: *Name* (days left, `status`: bad / warn / maint / soon / ok / zz), **Expired** and **Due soon** counts, **Needs attention**, a **Renewals** calendar |
-| Carline | per car (a device): each due date (*MOT*, *Road tax*, …: days left, `state` over / soon / ok, `miles_left` for a service due at a mileage), a *… renewed* button (moves the date on as the app's Done does), **Mileage**, **Needs attention**; a **Car dates** calendar |
-| Binline | **Next collection** (days, which bins), each bin's next collection, **Put out tonight** (from noon the day before until marked out in the app), a **Bin days** calendar; skips, moves, pauses and bank holidays as in the app |
+| Carline | per car (a device): each due date (*MOT*, *Road tax*, …: days left, `state` over / soon / ok, `miles_left` for a service due at a mileage), a *… renewed* button (moves the date on as the app's Done does), **Mileage**, **Needs attention**, **Details** (the registration, with every detail from the Details tab and the notes as attributes); a **Car dates** calendar |
+| Binline | **Next collection** (days, which bins), each bin's next collection, **Put out tonight** (from noon the day before until marked out), a **They're out** button (recorded in the app for everyone in the household with those bins, so no reminder that night), a **Bin days** calendar with ✓ when they went out; skips, moves, pauses and bank holidays as in the app. The same bins in two people's Binline (same name, date and how often) show once |
+| Homeline | per home (a device): each job (days until due, `state` over / month / later, last done and by whom), **Done** and **Later** buttons, overdue and due-soon counts, needs attention; a **Home jobs** calendar |
+| Plantline | per plant (a device): **Needs water** / **Needs feeding** / repotting / pruning (days until, the app's seasonal rules), **Watered**, **Fed** and **Not yet** buttons; **Plant jobs today**; a **Plant care** calendar |
+| Cookline | **Timers running**, **Next timer ends** (a timestamp: trigger on it), **Timer finished**; **Today's meals** (from the week planner); a **Meals** calendar. Tick your recipe books so the planner's recipes have their names |
 | Listline | each list as a **to-do list** (add, tick, edit, remove, reorder from Home Assistant; due dates on to-do lists), and *Name* left (how many) |
 
 ## Privacy
