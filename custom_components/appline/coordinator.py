@@ -63,6 +63,7 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
         self.refs: dict[tuple[str, str, str], str] = {}       # (person, app, item id) → shared copy id
         self.docs: dict[str, tuple[int, Any]] = {}            # document id → (version, opened JSON)
         self.live = False
+        self.panels: list[str] = []                          # sidebar panels this entry added (removed on unload)
         self.names: dict[str, dict[str, str]] = {}            # thing key → name placeholders, to notice a rename
         self._ws: aiohttp.ClientWebSocketResponse | None = None
 

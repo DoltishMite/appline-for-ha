@@ -37,18 +37,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ApplineConfigEntry) -> b
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ApplineConfigEntry) -> bool:
-    for p in entry.options.get(CONF_PANELS, []):
-        frontend.async_remove_panel(hass, PANEL_PREFIX + p["id"], warn_if_unknown=False)
+    # the panels this entry added (not today's options: after an app is unticked they no longer list it, so it would stay)
+    for path in getattr(entry.runtime_data, "panels", []):
+        frontend.async_remove_panel(hass, path, warn_if_unknown=False)
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
 @callback
 def _add_panels(hass: HomeAssistant, entry: ApplineConfigEntry) -> None:
+    entry.runtime_data.panels = []
     for p in entry.options.get(CONF_PANELS, []):
+        path = PANEL_PREFIX + p["id"]
         try:
             frontend.async_register_built_in_panel(
                 hass, "iframe", sidebar_title=p["name"], sidebar_icon=APP_ICONS.get(p["id"], "mdi:apps"),
-                frontend_url_path=PANEL_PREFIX + p["id"], config={"url": f"{BASE}/{p['path']}/"}, require_admin=False)
+                frontend_url_path=path, config={"url": f"{BASE}/{p['path']}/"}, require_admin=False)
+            entry.runtime_data.panels.append(path)
         except ValueError:
             LOGGER.warning("%s is already in the sidebar (from another Appline entry)", p["name"])
 
