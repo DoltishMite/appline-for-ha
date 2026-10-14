@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
+from homeassistant.const import UnitOfTime
 from homeassistant.core import HomeAssistant
 
 from . import ApplineConfigEntry
 from .entity import ApplineEntity
-from .parsers.model import COUNT, ENUM, SENSOR, TIMESTAMP
+from .parsers.model import COUNT, DAYS, ENUM, SENSOR, TIMESTAMP
 from .platform import follow
 
 
@@ -21,6 +22,9 @@ class ApplineSensor(ApplineEntity, SensorEntity):
             self._attr_device_class = SensorDeviceClass.TIMESTAMP
         elif t.kind == COUNT:
             self._attr_state_class = SensorStateClass.MEASUREMENT
+        elif t.kind == DAYS:   # days until (negative: since); shown as a duration
+            self._attr_device_class = SensorDeviceClass.DURATION
+            self._attr_native_unit_of_measurement = UnitOfTime.DAYS
 
     @property
     def native_value(self):

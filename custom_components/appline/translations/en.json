@@ -97,11 +97,35 @@
       },
       "pets_todo": {
         "name": "Pets to do now"
+      },
+      "countdown_days": {
+        "name": "{name}"
+      },
+      "countdown_at": {
+        "name": "{name} date"
+      },
+      "yearly_days": {
+        "name": "{name}'s {kind}"
+      },
+      "renewal_days": {
+        "name": "{name}"
+      },
+      "renewals_expired": {
+        "name": "Expired"
+      },
+      "renewals_due": {
+        "name": "Due soon"
+      },
+      "list_left": {
+        "name": "{name} left"
       }
     },
     "binary_sensor": {
       "pet_needs_care": {
         "name": "Needs care"
+      },
+      "renewals_attention": {
+        "name": "Needs attention"
       }
     },
     "calendar": {
@@ -113,11 +137,25 @@
       },
       "person_calendar": {
         "name": "{person}'s pet care"
+      },
+      "countdown_calendar": {
+        "name": "Countdowns"
+      },
+      "dayline_calendar": {
+        "name": "Calendar"
+      },
+      "renewal_calendar": {
+        "name": "Renewals"
       }
     },
     "button": {
       "pet_task_done": {
         "name": "{task} done"
+      }
+    },
+    "todo": {
+      "list_todo": {
+        "name": "{name}"
       }
     }
   }

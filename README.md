@@ -7,7 +7,7 @@ Brings the apps at [launcher.hedgepig.uk](https://launcher.hedgepig.uk) into Hom
 - **Two-way.** Tick a task off from a dashboard or an automation, or add an appointment from a pet's calendar, and it shows in the app.
 - **Apps in the sidebar.** Pick apps to show in Home Assistant's sidebar.
 
-Apps so far: **Petline**. More are coming.
+Apps so far: **Petline**, **Countline**, **Dayline**, **Renewline** and **Listline** (as Home Assistant to-do lists). More are coming.
 
 ## Install (HACS)
 1. HACS → ⋮ → **Custom repositories** → `https://github.com/DoltishMite/appline-for-ha`, type **Integration** → Add.
@@ -54,6 +54,14 @@ actions:
       message: "Biscuit hasn't been fed yet"
 ```
 Tick it from an automation: `action: button.press` with `target: { entity_id: button.biscuit_feeding_done }`.
+
+## Countline, Dayline, Renewline, Listline
+| App | Entities |
+|---|---|
+| Countline | per countdown: *Name* (days until it; a repeating one moves on to its next date as in the app) and *Name* date (a timestamp); a **Countdowns** calendar |
+| Dayline | per birthday or yearly date: *Name's birthday* (days until, `turning` the age); a **Calendar** with those and Dayline's own events (repeats, multi-day, times) |
+| Renewline | per item: *Name* (days left, `status`: bad / warn / maint / soon / ok / zz), **Expired** and **Due soon** counts, **Needs attention**, a **Renewals** calendar |
+| Listline | each list as a **to-do list** (add, tick, edit, remove, reorder from Home Assistant; due dates on to-do lists), and *Name* left (how many) |
 
 ## Privacy
 Each person's things are stored on the apps' server **sealed**, encrypted in their browser with a key made from their link code, and

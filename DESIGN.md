@@ -61,6 +61,23 @@ household entry (people's link codes) ──▶ coordinator ── GET /api/sync
 | | | `….<task>.done` | button: tick it off | `pet_task_done` (`{task} done`) |
 | | | `….calendar` | calendar (disabled at first); new events → appointments | `pet_calendar` |
 
+## More apps (0.3.0)
+Same pattern as Petline: `parsers/<app>.py` (shared household logic in `parsers/common.py`: whose, shared once, where a change goes),
+the app's own rules ported and parity-tested against its page (`tests/js/app-fns.mjs` copies named functions out of a page and runs them
+with a fixed clock; `tests/test_apps.py`), and an entry in the kit's `halink.js` ADAPTERS (an app can have several lists: Dayline's people
+and events).
+| App | Ported from | Entities |
+|---|---|---|
+| Countline (`countline`) | countdown.html `nextDate`, `over`, rollRepeats | `countline.….days` (duration, days), `.at` (timestamp), `countline.calendar` |
+| Dayline (`birthline`) | `onYear`, `next`, `starts` | `birthline.….days`, `birthline.calendar` (yearly dates + events) |
+| Renewline (`deadline`) | renewals.html `status`, `daysLeft` | `deadline.….days` (+ status), `deadline.expired`, `.due`, `.attention`, `.calendar` |
+| Listline (`listline`) | lists.html add box, checkbox (repeat `last`), `key()` | `listline.….todo` (to-do list, two-way), `.left` |
+Next batches (agreed scope "minus ones where it makes zero sense"): Carline, Medline, Homeline, Plantline, Binline, Rotaline, Habitline,
+Clockline alarms and timers; then Pantryline, Leaveline, Budgetline, Meterline, Studyline, Packline, Readline, Mileline; then the live-data
+apps (Pingline, Statusline, Powerline, Fuelline, Tideline, Breathline, Riverline, Departline, Auroraline, Solarline…). Left out (nothing to
+sense): the launcher, Netline, Byteline, Meetline, Convertline, Speedline, Downloadline, Loanline, Paceline, Colourline, Randomline,
+Gameline, Wordline, Scanline, Sleepline, Noteline, Scoreline.
+
 ## Tested
 - Here: crypto against the kit's own sealing (Node, `tests/js/make-vector.mjs`), Petline parsing, households (owners, a shared pet once,
   per-person calendars, the changes), parity with `pets.html` `status()` over five days in 37-minute steps (Europe/London), and a link copy
@@ -69,6 +86,7 @@ household entry (people's link codes) ──▶ coordinator ── GET /api/sync
   Assistant by the owner.
 
 ## Changelog
+- 0.3.0 (2026-10-14): Countline, Dayline, Renewline and Listline (to-do lists, two-way).
 - 0.2.3 (2026-10-14): panels open with ?hp=ha (the apps hide what a panel can't do), Scanline and Gameline left out of Sidebar apps; Configure → Who's who links app names to Home Assistant people (done_by_person; HA ticks saved under the linked name).
 - 0.2.2 (2026-10-14): Appline (the launcher) in the sidebar opens the launcher (it pointed at /tools/, a blank page).
 - 0.2.1 (2026-10-14): an app unticked in Sidebar apps leaves the sidebar (it stayed until a restart).

@@ -5,7 +5,7 @@ import logging
 
 DOMAIN = "appline"
 LOGGER = logging.getLogger(__package__)
-VERSION = "0.2.3"   # keep in step with manifest.json
+VERSION = "0.3.0"   # keep in step with manifest.json
 
 BASE = "https://launcher.hedgepig.uk"
 SYNC_URL = f"{BASE}/api/sync"
@@ -25,4 +25,5 @@ CONF_NAMES = "names"   # { name used in the apps: person entity }: who's who (Co
 PANEL_PREFIX = "appline-"
 APP_ICONS = {"petline": "mdi:paw", "worldline": "mdi:clock-outline", "weatherline": "mdi:weather-partly-cloudy",
              "pulseline": "mdi:list-status", "gridline": "mdi:flash", "deadline": "mdi:calendar-alert",
-             "pingline": "mdi:access-point-network", "tideline": "mdi:waves", "tools": "mdi:apps"}
+             "pingline": "mdi:access-point-network", "tideline": "mdi:waves", "tools": "mdi:apps", "countline": "mdi:timer-sand",
+             "birthline": "mdi:calendar-star", "listline": "mdi:format-list-checks"}
