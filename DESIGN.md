@@ -69,6 +69,7 @@ household entry (people's link codes) ──▶ coordinator ── GET /api/sync
   Assistant by the owner.
 
 ## Changelog
+- 0.2.2 (2026-10-14): Appline (the launcher) in the sidebar opens the launcher (it pointed at /tools/, a blank page).
 - 0.2.1 (2026-10-14): an app unticked in Sidebar apps leaves the sidebar (it stayed until a restart).
 - 0.2.0 (2026-10-14): households: people with their own HA link codes (chosen thing by thing in the apps), shared things once, ✓ done buttons,
   appointments from a pet's calendar, per-person calendars.

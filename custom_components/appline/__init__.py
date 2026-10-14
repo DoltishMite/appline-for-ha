@@ -43,6 +43,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ApplineConfigEntry) -> 
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
+def panel_url(p: dict) -> str:
+    """The app's hub address. The launcher is the front page (saved before 0.2.2 as path "tools", which doesn't exist)."""
+    path = "" if p.get("id") == "tools" else str(p.get("path") or "").strip("/")
+    return f"{BASE}/{path}/" if path else f"{BASE}/"
+
+
 @callback
 def _add_panels(hass: HomeAssistant, entry: ApplineConfigEntry) -> None:
     entry.runtime_data.panels = []
@@ -51,7 +57,7 @@ def _add_panels(hass: HomeAssistant, entry: ApplineConfigEntry) -> None:
         try:
             frontend.async_register_built_in_panel(
                 hass, "iframe", sidebar_title=p["name"], sidebar_icon=APP_ICONS.get(p["id"], "mdi:apps"),
-                frontend_url_path=path, config={"url": f"{BASE}/{p['path']}/"}, require_admin=False)
+                frontend_url_path=path, config={"url": panel_url(p)}, require_admin=False)
             entry.runtime_data.panels.append(path)
         except ValueError:
             LOGGER.warning("%s is already in the sidebar (from another Appline entry)", p["name"])
