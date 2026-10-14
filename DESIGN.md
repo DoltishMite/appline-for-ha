@@ -22,8 +22,8 @@ For whoever changes this next: read it first.
 - **Minimum HA:** 2025.8 (`OptionsFlowWithReload`, `AddConfigEntryEntitiesCallback`-era platform setup, typed `runtime_data`).
 - **The backend's Origin check:** the backend must let a request with no `Origin` and `X-Appline-Client: ha/<version>` read (`GET /api/sync`),
   save over an **existing** copy (`PUT` with a base version; never start one or delete one) and watch (`/api/live`, room messages and games
-  ignored). Browsers can't pass for it: a page elsewhere sending that header gets a preflight with its Origin, which is refused. **Written but
-  not applied** (2026-10-14): `site/_scripts/apply-ha-backend.js` makes the change; until it's deployed, setup says "refused".
+  ignored). Browsers can't pass for it: a page elsewhere sending that header gets a preflight with its Origin, which is refused. Live since
+  2026-10-14 (`site/_scripts/apply-ha-backend.js`; tests `site/backend/test/test-ha-client.mjs`).
 
 ## How it works
 ```
