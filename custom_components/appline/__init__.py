@@ -1,8 +1,9 @@
 """Appline for HA: the apps (launcher.hedgepig.uk) in Home Assistant.
 
-Chosen apps become sidebar panels, and the apps' data becomes sensors that follow what's in them: a new pet or task gets entities,
-a removed one loses them (and its device), a renamed one keeps its entity. Data is read with the code entered in the setup and
-opened here; the server only ever holds sealed copies. Read-only: nothing is ever saved back.
+Chosen apps become sidebar panels, and what each person in the household sends from their apps becomes sensors, calendars and
+buttons that follow it: a new pet or task gets entities, a removed one loses them (and its device), a renamed one keeps its entity.
+Each person chooses what's sent (and can stop any time); copies are sealed, so the server can't read them. Changes made here (a
+button, a calendar event) go back into the apps.
 """
 from __future__ import annotations
 
@@ -16,7 +17,7 @@ from .const import APP_ICONS, BASE, CONF_PANELS, DOMAIN, LOGGER, PANEL_PREFIX
 from .coordinator import ApplineCoordinator
 from .entity import device_identifier
 
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.CALENDAR]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.CALENDAR, Platform.BUTTON]
 type ApplineConfigEntry = ConfigEntry[ApplineCoordinator]
 
 

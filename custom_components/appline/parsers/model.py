@@ -4,8 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-SENSOR, BINARY, CALENDAR = "sensor", "binary_sensor", "calendar"
-ENUM, TIMESTAMP, COUNT, PROBLEM, EVENTS = "enum", "timestamp", "count", "problem", "events"
+SENSOR, BINARY, CALENDAR, BUTTON = "sensor", "binary_sensor", "calendar", "button"
+ENUM, TIMESTAMP, COUNT, PROBLEM, EVENTS, PRESS = "enum", "timestamp", "count", "problem", "events", "press"
 
 
 @dataclass
@@ -29,7 +29,7 @@ class Thing:
     icon: str | None = None
     options: list[str] | None = None   # ENUM only
     app: str = ""                      # the app it came from (CALENDAR: whose events() works out its events)
-    data: Any = None                   # CALENDAR: what that app's events() needs (not shown as attributes)
+    data: Any = None                   # CALENDAR: what its events() needs; a task or BUTTON: where a change is saved (not shown)
     enabled: bool = True               # False: the entity starts disabled (the user can switch it on)
 
 

@@ -17,11 +17,12 @@ import json
 from datetime import date, datetime, time, timedelta
 from typing import Any
 
-from .model import BINARY, CALENDAR, COUNT, ENUM, EVENTS, PROBLEM, SENSOR, TIMESTAMP, Device, Event, Parsed, Thing
+from .model import BINARY, BUTTON, CALENDAR, COUNT, ENUM, EVENTS, PRESS, PROBLEM, SENSOR, TIMESTAMP, Device, Event, Parsed, Thing
 
 APP = "petline"
 NAME = "Petline"
 PETS, OPTS, SHARED = "petline_pets_v1", "petline_options_v1", "petline_shared_v1"
+LIST_KEY = PETS   # where its things are (a JSON list of objects with ids): what Home Assistant changes
 STATES = ["over", "late", "due", "soon", "later", "done"]
 NEEDS = {"due", "late", "over"}
 
@@ -129,36 +130,76 @@ def from_shared(item: dict, item_id: str) -> dict[str, str]:
     return {PETS: json.dumps([dict(item, id=item_id)])}
 
 
-def parse(data: dict[str, str], shared: dict[str, dict], now: datetime, out: Parsed, app_name: str | None = None) -> None:
-    """Add Petline's devices and entities to out. shared: { pet id: the shared copy's item } (newer than the synced copy)."""
+def _pets(data: dict[str, str]) -> list[dict]:
     pets = _json(data.get(PETS), [])
-    shown = []
+    return [p for p in pets if isinstance(p, dict) and isinstance(p.get("id"), str)] if isinstance(pets, list) else []
+
+
+def _remind(data: dict[str, str]) -> str:
     opts = _json(data.get(OPTS), {})
-    remind_at = opts.get("remindAt") if isinstance(opts, dict) and isinstance(opts.get("remindAt"), str) else "09:00"
-    if not isinstance(pets, list):
-        pets = []
-    out.add_device(Device(APP, app_name or NAME, NAME))
-    total = 0
-    for pet in pets:
-        if not isinstance(pet, dict) or not isinstance(pet.get("id"), str):
-            continue
+    return opts["remindAt"] if isinstance(opts, dict) and isinstance(opts.get("remindAt"), str) else "09:00"
+
+
+def parse(data: dict[str, str], shared: dict[str, dict], now: datetime, out: Parsed, app_name: str | None = None) -> None:
+    """One copy (a sync copy, or one shared pet): keys petline.<pet id>…, read-only. shared: { pet id: its shared copy's item }."""
+    ra, ents = _remind(data), []
+    for pet in _pets(data):
         pid = pet["id"]
         if isinstance(shared.get(pid), dict):
             pet = dict(shared[pid], id=pid)
-        shown.append(pet)
-        dev = f"{APP}.{pid}"
-        out.add_device(Device(dev, str(pet.get("name") or "Pet"), "Pet", via=APP))
+        ents.append({"dev": f"{APP}.{pid}", "pet": pet, "remind_at": ra, "owner": None, "shared_with": None, "people": [], "target": None})
+    _emit(ents, now, out, app_name, None)
+
+
+def parse_people(people: list[tuple[str, str, dict[str, str]]], refs: dict[tuple[str, str], str], shared_items: dict[str, dict],
+                 now: datetime, out: Parsed, app_name: str | None = None) -> None:
+    """A household: people = [(person key, name, their link copy's Petline data)]; refs = { (person key, pet id): shared copy id }
+    for their shared pets; shared_items = { shared copy id: item }. A pet of one person's own is keyed petline.<person>.<pet>; a shared
+    pet is keyed by its shared copy (petline.shared.<id>), so it shows once however many of the household send it, with who's in it.
+    target says where Home Assistant saves a change: ["link", person, app, pet id] (their link copy) or ["shared", copy id, app]."""
+    ents, by_sid = [], {}
+    for pk, name, data in people:
+        ra = _remind(data)
+        for pet in _pets(data):
+            pid, sid = pet["id"], refs.get((pk, pet["id"]))
+            if not sid:
+                ents.append({"dev": f"{APP}.{pk}.{pid}", "pet": pet, "remind_at": ra, "owner": name, "shared_with": None,
+                             "people": [pk], "target": ["link", pk, APP, pid]})
+                continue
+            if sid in by_sid:
+                by_sid[sid]["shared_with"].append(name)
+                by_sid[sid]["people"].append(pk)
+                continue
+            item = shared_items.get(sid)
+            e = {"dev": f"{APP}.shared.{sid[:12]}", "pet": dict(item, id=pid) if isinstance(item, dict) else pet, "remind_at": ra, "owner": None,
+                 "shared_with": [name], "people": [pk], "target": ["shared", sid, APP] if isinstance(item, dict) else ["link", pk, APP, pid]}
+            by_sid[sid] = e
+            ents.append(e)
+    _emit(ents, now, out, app_name, [(pk, name) for pk, name, _ in people])
+
+
+def _emit(ents: list[dict], now: datetime, out: Parsed, app_name: str | None, people: list[tuple[str, str]] | None) -> None:
+    out.add_device(Device(APP, app_name or NAME, NAME))
+    names = [str(e["pet"].get("name") or "Pet") for e in ents]
+    total = 0
+    for e in ents:
+        pet, dev, target = e["pet"], e["dev"], e["target"]
+        pname = str(pet.get("name") or "Pet")
+        if names.count(pname) > 1:   # two Biscuits in one household: say whose
+            pname += f" ({e['owner']})" if e["owner"] else " (shared)"
+        out.add_device(Device(dev, pname, "Pet", via=APP))
+        who = {"owner": e["owner"]} if e["owner"] else {"shared_with": list(e["shared_with"])} if e["shared_with"] else {}
         todo = []
         for task in pet.get("tasks") or []:
             if not isinstance(task, dict) or not isinstance(task.get("id"), str):
                 continue
-            s = status(pet, task, now, remind_at)
+            s = status(pet, task, now, e["remind_at"])
             if s is None:
                 continue
             tid, tname = task["id"], str(task.get("name") or "Task")
             if s["state"] in NEEDS:
                 todo.append(tname)
-            attrs = {"pet": pet.get("name"), "type": task.get("type"), "last_done": s["last"].isoformat() if s["last"] else None,
+            attrs = {"pet": pet.get("name"), **who, "type": task.get("type"), "last_done": s["last"].isoformat() if s["last"] else None,
                      "done_by": s["by"], "due": s["due"].isoformat() if s["due"] else None}
             if s["slot"]:
                 attrs["slot"] = s["slot"]
@@ -170,16 +211,49 @@ def parse(data: dict[str, str], shared: dict[str, dict], now: datetime, out: Par
                 attrs["note"] = task.get("note")
             ph = {"task": tname}
             icon = _icon(task)
-            out.add(Thing(f"{dev}.{tid}.status", dev, SENSOR, ENUM, "pet_task", s["state"], ph, attrs, icon, STATES))
+            act = {"target": target, "task": tid} if target else None
+            out.add(Thing(f"{dev}.{tid}.status", dev, SENSOR, ENUM, "pet_task", s["state"], ph, attrs, icon, STATES, app=APP, data=act))
             out.add(Thing(f"{dev}.{tid}.next", dev, SENSOR, TIMESTAMP, "pet_task_next", s["due"], ph, {}, "mdi:calendar-clock"))
+            if act:
+                out.add(Thing(f"{dev}.{tid}.done", dev, BUTTON, PRESS, "pet_task_done", None, ph, {}, "mdi:check-circle-outline", app=APP, data=act))
         total += len(todo)
-        out.add(Thing(f"{dev}.todo", dev, SENSOR, COUNT, "pet_todo", len(todo), {}, {"tasks": todo}, "mdi:paw"))
+        out.add(Thing(f"{dev}.todo", dev, SENSOR, COUNT, "pet_todo", len(todo), {}, {"tasks": todo, **who}, "mdi:paw"))
         out.add(Thing(f"{dev}.needs_care", dev, BINARY, PROBLEM, "pet_needs_care", bool(todo), {}, {"tasks": todo}))
         out.add(Thing(f"{dev}.calendar", dev, CALENDAR, EVENTS, "pet_calendar", None, icon="mdi:paw", app=APP,
-                      data={"pets": [pet], "remind_at": remind_at, "prefix": False}, enabled=False))
+                      data={"items": [e], "prefix": False, "target": target}, enabled=False))
     out.add(Thing(f"{APP}.todo", APP, SENSOR, COUNT, "pets_todo", total, {}, {}, "mdi:paw"))
     out.add(Thing(f"{APP}.calendar", APP, CALENDAR, EVENTS, "pets_calendar", None, icon="mdi:calendar-heart", app=APP,
-                  data={"pets": shown, "remind_at": remind_at, "prefix": True}))
+                  data={"items": ents, "prefix": True}))
+    for pk, name in people or []:   # each person's: their own pets and the shared ones they're in
+        out.add(Thing(f"{APP}.{pk}.calendar", APP, CALENDAR, EVENTS, "person_calendar", None, {"person": name}, icon="mdi:account-heart",
+                      app=APP, data={"items": [e for e in ents if pk in e["people"]], "prefix": True}, enabled=len(people) > 1))
+
+
+# ---------- changes made in Home Assistant (worked out here, saved by the coordinator) ----------
+def find_pet(pets: list, pid: str) -> dict | None:
+    return next((p for p in pets if isinstance(p, dict) and p.get("id") == pid), None)
+
+
+def mark_done(pet: dict, task_id: str, by: str, now_ms: int, new_id: str) -> bool:
+    """Tick a task, as the app's Done does (a log entry; an appointment is also marked done). False if there's no such task or the
+    appointment is already done (a press for something already done is ignored, like the app's notification button)."""
+    task = next((t for t in pet.get("tasks") or [] if isinstance(t, dict) and t.get("id") == task_id), None)
+    if task is None:
+        return False
+    if task.get("type") == "appt":
+        if task.get("done"):
+            return False
+        task["done"] = True
+    pet["log"] = list(pet.get("log") or []) + [{"id": new_id, "task": task_id, "t": now_ms, "by": by}]
+    if len(pet["log"]) > 400:
+        pet["log"] = pet["log"][-400:]
+    return True
+
+
+def add_appointment(pet: dict, new_id: str, name: str, day: date, at: str | None, note: str = "") -> None:
+    """An appointment, as the app's Vet appointment preset makes (from Home Assistant's calendar)."""
+    pet["tasks"] = list(pet.get("tasks") or []) + [{"id": new_id, "name": name or "Vet appointment", "icon": "🩺", "type": "appt",
+                                                     "next": day.isoformat(), "time": at or "", "done": False, "note": note}]
 
 
 # ---------- the calendar ----------
@@ -193,7 +267,8 @@ def events(data: dict, start: datetime, end: datetime, now: datetime, daily: boo
     tz = now.tzinfo
     today = now.date()
     out: list[Event] = []
-    for pet in data.get("pets") or []:
+    for it in data.get("items") or []:
+        pet = it["pet"]
         pre = f"{pet.get('name') or 'Pet'}: " if data.get("prefix") else ""
         pid = pet.get("id")
         tasks = {t["id"]: t for t in pet.get("tasks") or [] if isinstance(t, dict) and isinstance(t.get("id"), str)}
@@ -205,7 +280,7 @@ def events(data: dict, start: datetime, end: datetime, now: datetime, daily: boo
             who = f" ({l['by']})" if l.get("by") else ""
             out.append(Event(f"{pid}-{l.get('id')}", f"✓ {pre}{t.get('name')}{who}", at, at + timedelta(minutes=DONE_MINUTES)))
         for t in tasks.values():
-            s = status(pet, t, now, data.get("remind_at") or "09:00")
+            s = status(pet, t, now, it.get("remind_at") or "09:00")
             if s is None:
                 continue
             name, note = f"{pre}{t.get('name') or 'Task'}", str(t.get("note") or "")
@@ -258,3 +333,13 @@ def events(data: dict, start: datetime, end: datetime, now: datetime, daily: boo
         return x if isinstance(x, datetime) else datetime.combine(x, time(0), tzinfo=tz)
     hit = [e for e in out if as_dt(e.end) > start and as_dt(e.start) < end]
     return sorted(hit, key=lambda e: (as_dt(e.start), e.summary))
+
+
+# Hooks the integration calls (one per kind of change), each given the item to change in place; False: nothing to change.
+def press(pet: dict, act: dict, by: str, now_ms: int, new_id: str) -> bool:
+    return mark_done(pet, act["task"], by, now_ms, new_id)
+
+
+def create_event(pet: dict, new_id: str, summary: str, day: date, at: str | None, description: str) -> bool:
+    add_appointment(pet, new_id, summary, day, at, description)
+    return True

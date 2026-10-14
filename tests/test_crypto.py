@@ -1,6 +1,5 @@
 """Documents sealed by the kit's own scheme (make-vector.mjs, in Node) must open here."""
 import json
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -9,7 +8,7 @@ import pytest
 
 from hpcrypto import SYNC, TOGETHER, SealError, keys_for, norm, open_doc
 
-MAKE = Path(os.environ.get("USERPROFILE", "~")).expanduser() / ".claude/skills/hedgepig-ha-integration/scripts/make-vector.mjs"
+MAKE = Path(__file__).parent / "js" / "make-vector.mjs"
 needs_node = pytest.mark.skipif(not shutil.which("node") or not MAKE.exists(), reason="needs node and make-vector.mjs")
 
 

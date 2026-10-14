@@ -17,7 +17,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: Appline
     data = c.data
     return {
         "entry": async_redact_data(entry.as_dict(), REDACT),
-        "kind": c.kind,
+        "people": len(c.people),
         "live": c.live,
         "last_update_success": c.last_update_success,
         "shared_followed": len(c.shared),

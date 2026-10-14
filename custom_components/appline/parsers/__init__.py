@@ -20,7 +20,7 @@ from .model import Device, Event, Parsed, Thing
 
 PARSERS = {m.APP: m for m in (petline,)}
 
-__all__ = ["PARSERS", "Device", "Event", "Parsed", "Thing", "app_data", "app_name", "parse_sync", "parse_shared", "sync_share_codes"]
+__all__ = ["PARSERS", "Device", "Event", "Parsed", "Thing", "app_data", "app_name", "parse_household", "parse_sync", "parse_shared", "sync_share_codes"]
 
 
 def app_data(sync_doc: Any, app: str) -> dict[str, str] | None:
@@ -62,6 +62,27 @@ def parse_sync(sync_doc: Any, shared: dict[tuple[str, str], dict], now: datetime
             continue
         mine = {iid: item for (a, iid), item in shared.items() if a == app}
         mod.parse(data, mine, now, out, app_name(data, app))
+    return out
+
+
+def parse_household(people: list[tuple[str, Any]], refs: dict[tuple[str, str, str], str], shared_items: dict[str, dict],
+                    now: datetime) -> Parsed:
+    """A household: people = [(person key, their HA link copy)] (the same shape as a sync copy, with only what they ticked, and
+    their name); refs = { (person key, app, item id): shared copy id } for the shared things in them; shared_items = { shared copy id:
+    item }. Apps without parse_people are skipped."""
+    out = Parsed()
+    for app, mod in PARSERS.items():
+        if not hasattr(mod, "parse_people"):
+            continue
+        rows, name = [], None
+        for pk, doc in people:
+            data = app_data(doc, app)
+            if data is not None:
+                who = doc.get("name") if isinstance(doc, dict) and isinstance(doc.get("name"), str) and doc["name"].strip() else "Someone"
+                rows.append((pk, who, data))
+                name = name or app_name(data, app)
+        if rows:
+            mod.parse_people(rows, {(pk, iid): sid for (pk, a, iid), sid in refs.items() if a == app}, shared_items, now, out, name)
     return out
 
 

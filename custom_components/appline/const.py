@@ -5,17 +5,19 @@ import logging
 
 DOMAIN = "appline"
 LOGGER = logging.getLogger(__package__)
-VERSION = "0.1.0"   # keep in step with manifest.json
+VERSION = "0.2.0"   # keep in step with manifest.json
 
 BASE = "https://launcher.hedgepig.uk"
 SYNC_URL = f"{BASE}/api/sync"
 LIVE_URL = "wss://launcher.hedgepig.uk/api/live"
 APPS_URL = f"{BASE}/kit/apps.json"
-# The backend lets this client read (GET /api/sync, the live link) when it sends no Origin and names itself here.
+# The backend lets this client read and save existing copies (GET/PUT /api/sync) and watch them (the live link) when it sends
+# no Origin and names itself here.
 HEADERS = {"X-Appline-Client": f"ha/{VERSION}"}
 
-CONF_CODE = "code"     # a personal sync code or one shared thing's code (a secret: never log it)
-CONF_KIND = "kind"     # "sync" or "together"
+CONF_CODE = "code"     # a person's HA link code (a secret: never log it)
+CONF_PEOPLE = "people" # [{ code }] the household (options)
+CONF_HOUSEHOLD = "household"   # its name (the entry's title)
 CONF_PANELS = "panels" # [{ id, name, path }] apps shown in the sidebar
 CONF_CAL_DAILY = "calendar_daily"   # daily routines (feeds, walks) in the calendars; default on
 

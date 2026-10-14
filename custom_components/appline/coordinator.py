@@ -1,14 +1,21 @@
-"""Keeps the apps' data in Home Assistant up to date.
+"""Keeps a household's things in Home Assistant up to date, and saves the changes made here.
 
-One config entry = one code: a personal sync code (everything in that setup, plus the copies of the things it shares, which are
-newer than the synced ones while another person is ticking things off) or one shared thing's code.
-Changes arrive over the live link (wss /api/live) the moment they're saved; a pull every 5 minutes is the safety net, and the
-entities are worked out again every minute so time-based states (due → late) move on without a new save.
+One config entry = one household: a list of people, each with an HA link code made in their apps (Appline → Settings → Sync & Backup →
+Integrations → Home Assistant). Their link copies hold only what they ticked; the shared things in them carry their share codes, so the
+shared copies are followed too (newer than anyone's link copy while others are ticking things off) and a thing shared by several people
+in the household shows once.
+Changes arrive over the live link (wss /api/live) the moment they're saved; a pull every 5 minutes is the safety net, and the entities
+are worked out again every minute so time-based states (due → late) move on without a new save.
+Saving (a button, a calendar event): the thing is changed in its own copy, the person's link copy (by: 'ha'; their apps merge it in) or
+the shared copy (everyone's apps merge it in), against the version just read, again after a clash.
 """
 from __future__ import annotations
 
 import asyncio
 import json
+import secrets
+import time
+from collections.abc import Callable
 from datetime import timedelta
 from typing import Any
 
@@ -16,18 +23,28 @@ import aiohttp
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
 from . import api
-from .const import CONF_CODE, CONF_KIND, DOMAIN, HEADERS, LIVE_URL, LOGGER
-from .hpcrypto import SYNC, TOGETHER, Keys, SealError, keys_for, open_doc
-from .parsers import Parsed, parse_shared, parse_sync, sync_share_codes
+from .const import CONF_CODE, CONF_PEOPLE, DOMAIN, HEADERS, LIVE_URL, LOGGER
+from .hpcrypto import HALINK, TOGETHER, Keys, SealError, keys_for, open_doc, seal_doc
+from .parsers import PARSERS, Parsed, parse_household, sync_share_codes
 
 POLL = timedelta(minutes=5)
 TICK = timedelta(minutes=1)
+
+
+def person_key(keys: Keys) -> str:
+    """A short, stable key for a person (part of a hash of their link: leads back to nothing)."""
+    return keys.id[:10]
+
+
+def new_id() -> str:
+    return "h" + format(int(time.time() * 1000), "x") + secrets.token_hex(2)
 
 
 class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
@@ -38,13 +55,25 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         super().__init__(hass, LOGGER, config_entry=entry, name=DOMAIN, update_interval=POLL)
         self.session = async_get_clientsession(hass)
-        self.kind: str = entry.data.get(CONF_KIND, SYNC)
-        self.main: Keys = keys_for(entry.data[CONF_CODE], self.kind)
-        self.shared: dict[tuple[str, str], Keys] = {}       # (app, item id) → keys of that thing's shared copy
-        self.docs: dict[str, tuple[int, Any]] = {}          # document id → (version, opened JSON)
+        self.people: dict[str, Keys] = {}
+        for p in entry.options.get(CONF_PEOPLE, []):
+            k = keys_for(p[CONF_CODE], HALINK)
+            self.people[person_key(k)] = k
+        self.shared: dict[str, Keys] = {}                     # shared copy id → its keys
+        self.refs: dict[tuple[str, str, str], str] = {}       # (person, app, item id) → shared copy id
+        self.docs: dict[str, tuple[int, Any]] = {}            # document id → (version, opened JSON)
         self.live = False
-        self.names: dict[str, dict[str, str]] = {}          # thing key → name placeholders, to notice a rename
+        self.names: dict[str, dict[str, str]] = {}            # thing key → name placeholders, to notice a rename
         self._ws: aiohttp.ClientWebSocketResponse | None = None
+
+    def person_names(self) -> dict[str, str]:
+        """{ person key: the name they gave in their apps } for the people whose copies are here."""
+        out = {}
+        for pk, k in self.people.items():
+            d = self.docs.get(k.id)
+            name = d[1].get("name") if d and isinstance(d[1], dict) else None
+            out[pk] = name if isinstance(name, str) and name.strip() else "Someone"
+        return out
 
     # ---------- fetching ----------
     async def _open(self, keys: Keys, doc: str) -> Any:
@@ -57,59 +86,109 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
         elif self.docs.get(keys.id, (0, None))[0] != v:
             self.docs[keys.id] = (v, await self._open(keys, doc))
 
-    def _wanted_shared(self) -> dict[tuple[str, str], Keys]:
-        main = self.docs.get(self.main.id)
-        if self.kind != SYNC or not main:
-            return {}
-        return {k: self.shared.get(k) or keys_for(code, TOGETHER) for k, code in sync_share_codes(main[1]).items()}
-
-    async def _pull_shared(self) -> bool:
-        """Follow the setup's shared things (new ones fetched, gone ones dropped). True if the list changed."""
-        want = self._wanted_shared()
-        changed = {k.id for k in want.values()} != {k.id for k in self.shared.values()}
-        for k in self.shared.values():
-            if k.id not in {w.id for w in want.values()}:
-                self.docs.pop(k.id, None)
-        self.shared = want
-        for keys in want.values():
+    async def _follow_shared(self) -> bool:
+        """Follow the shared things in everyone's link copies (new ones fetched, gone ones dropped). True if the list changed."""
+        refs, want = {}, {}
+        for pk, k in self.people.items():
+            d = self.docs.get(k.id)
+            if not d:
+                continue
+            for (app, iid), code in sync_share_codes(d[1]).items():
+                sk = keys_for(code, TOGETHER)
+                refs[(pk, app, iid)] = sk.id
+                want[sk.id] = sk
+        changed = set(want) != set(self.shared)
+        for sid in set(self.shared) - set(want):
+            self.docs.pop(sid, None)
+        self.shared, self.refs = want, refs
+        for sk in want.values():
             try:
-                await self._pull(keys)
+                await self._pull(sk)
             except (api.ApiError, SealError):
-                self.docs.pop(keys.id, None)   # that thing falls back to the synced copy
+                self.docs.pop(sk.id, None)   # that thing falls back to the person's own copy
         return changed
 
     async def _async_update_data(self) -> Parsed:
-        try:
-            await self._pull(self.main)
-            if await self._pull_shared():
-                await self._subscribe()
-        except api.Refused as err:
-            raise UpdateFailed("The apps' server refused Home Assistant: it needs the update that lets the integration read") from err
-        except api.ApiError as err:
-            raise UpdateFailed(str(err)) from err
-        except SealError as err:
-            raise UpdateFailed(f"The synced copy {err}") from err
+        opened = 0
+        for k in self.people.values():
+            try:
+                await self._pull(k)
+                opened += 1
+            except api.Refused as err:
+                raise UpdateFailed("The apps' server refused Home Assistant: it needs the update that lets the integration in") from err
+            except api.ApiError as err:
+                raise UpdateFailed(str(err)) from err
+            except SealError:
+                self.docs.pop(k.id, None)
+                LOGGER.warning("One person's link copy can't be opened (made by a newer version of the apps?)")
+        if self.people and not opened:
+            raise UpdateFailed("None of the household's link copies could be opened")
+        if await self._follow_shared():
+            await self._subscribe()
         return self.build()
 
     @callback
     def build(self) -> Parsed:
-        now = dt_util.now()
-        main = self.docs.get(self.main.id)
-        if not main:
-            return Parsed()
-        if self.kind == TOGETHER:
-            return parse_shared(main[1], now)
-        shared = {}
-        for k, keys in self.shared.items():
-            d = self.docs.get(keys.id)
+        people = [(pk, self.docs[k.id][1]) for pk, k in self.people.items() if k.id in self.docs]
+        items = {}
+        for sid in self.shared:
+            d = self.docs.get(sid)
             item = d[1].get("item") if d and isinstance(d[1], dict) else None
             if isinstance(item, dict):
-                shared[k] = item
-        return parse_sync(main[1], shared, now)
+                items[sid] = item
+        return parse_household(people, self.refs, items, dt_util.now())
+
+    # ---------- saving a change made in Home Assistant ----------
+    async def async_change(self, target: list, change: Callable[[dict], bool]) -> None:
+        """target: ["link", person, app, item id] or ["shared", copy id, app]; change(item) edits it in place (False: nothing to do)."""
+        kind = target[0]
+        keys = self.people.get(target[1]) if kind == "link" else self.shared.get(target[1])
+        mod = PARSERS.get(target[2])
+        if keys is None or mod is None:
+            raise HomeAssistantError("That isn't in Home Assistant any more")
+        v, doc = await api.get_doc(self.session, keys)
+        for _ in range(5):
+            if not v:
+                raise HomeAssistantError("Its copy has gone from the apps' server")
+            obj = await self._open(keys, doc)
+            if kind == "link":
+                try:
+                    data = obj["apps"][target[2]]["data"]
+                    items = json.loads(data[mod.LIST_KEY])
+                except (KeyError, TypeError, ValueError) as err:
+                    raise HomeAssistantError("It isn't in that person's link any more") from err
+                item = next((x for x in items if isinstance(x, dict) and x.get("id") == target[3]), None)
+                if item is None:
+                    raise HomeAssistantError("It isn't in that person's link any more")
+                if not change(item):
+                    return
+                data[mod.LIST_KEY] = json.dumps(items, ensure_ascii=False)
+            else:
+                if not isinstance(obj, dict) or not isinstance(obj.get("item"), dict):
+                    raise HomeAssistantError("The shared copy can't be read")
+                if not change(obj["item"]):
+                    return
+            obj["by"] = "ha"
+            sealed = await self.hass.async_add_executor_job(seal_doc, obj, keys)
+            try:
+                status, nv, cur = await api.put_doc(self.session, keys, v, sealed)
+            except api.Refused as err:
+                raise HomeAssistantError("The apps' server doesn't let Home Assistant save yet") from err
+            except api.ApiError as err:
+                raise HomeAssistantError(str(err)) from err
+            if status == 200:
+                self.docs[keys.id] = (nv, obj)
+                self.async_set_updated_data(self.build())
+                return
+            v, doc = nv, cur   # someone saved first: make the change on their version
+        raise HomeAssistantError("Kept clashing with another change: try again")
+
+    def by_name(self, user_name: str | None) -> str:
+        return user_name or "Home Assistant"
 
     # ---------- the live link ----------
     def _ids(self) -> list[str]:
-        return [self.main.id, *(k.id for k in self.shared.values())]
+        return [*(k.id for k in self.people.values()), *self.shared]
 
     async def _subscribe(self) -> None:
         if self._ws is not None and not self._ws.closed:
@@ -120,11 +199,9 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
         wait = 1
         while True:
             try:
-                async with self.session.ws_connect(LIVE_URL, headers=HEADERS, heartbeat=60) as ws:   # finds a link that died quietly
+                async with self.session.ws_connect(LIVE_URL, headers=HEADERS, heartbeat=60) as ws:   # heartbeat: finds a link that died quietly
                     self._ws = ws
                     await self._subscribe()
-                    if not self.live:
-                        LOGGER.debug("Live link up")
                     self.live, wait = True, 1
                     await self.async_request_refresh()   # catch anything missed while it was down
                     async for msg in ws:
@@ -147,7 +224,7 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
         except ValueError:
             return
         op, did = m.get("op"), m.get("id")
-        keys = next((k for k in (self.main, *self.shared.values()) if k.id == did), None)
+        keys = next((k for k in (*self.people.values(), *self.shared.values()) if k.id == did), None)
         if keys is None:
             return
         if op == "gone":
@@ -161,7 +238,7 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
                     self.docs[did] = (v, await self._open(keys, m["doc"]))
                 else:
                     await self._pull(keys)
-                if keys is self.main and await self._pull_shared():
+                if keys.kind == HALINK and await self._follow_shared():
                     await self._subscribe()
             except (api.ApiError, SealError):
                 return   # the next poll tries again
