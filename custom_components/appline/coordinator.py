@@ -30,7 +30,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from . import api
-from .const import CONF_CODE, CONF_PEOPLE, DOMAIN, HEADERS, LIVE_URL, LOGGER
+from .const import CONF_CODE, CONF_NAMES, CONF_PEOPLE, DOMAIN, HEADERS, LIVE_URL, LOGGER
 from .hpcrypto import HALINK, TOGETHER, Keys, SealError, keys_for, open_doc, seal_doc
 from .parsers import PARSERS, Parsed, parse_household, sync_share_codes
 
@@ -128,6 +128,35 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
             await self._subscribe()
         return self.build()
 
+    def names_seen(self) -> list[str]:
+        """Every name the apps use for who did something, and the people's own names (for Configure → Who's who)."""
+        seen = set(self.person_names().values()) - {"Someone"}
+        for t in (self.data.things.values() if self.data else []):
+            by = t.attrs.get("done_by") if isinstance(t.attrs, dict) else None
+            if isinstance(by, str) and by.strip():
+                seen.add(by.strip())
+        return sorted(seen, key=str.lower)
+
+    def link_names(self, parsed: Parsed) -> Parsed:
+        """done_by_person beside done_by, for names linked to a Home Assistant person."""
+        names = self.config_entry.options.get(CONF_NAMES) or {}
+        if names:
+            for t in parsed.things.values():
+                by = t.attrs.get("done_by") if isinstance(t.attrs, dict) else None
+                if isinstance(by, str) and names.get(by):
+                    t.attrs["done_by_person"] = names[by]
+        return parsed
+
+    def name_for_user(self, user_id: str | None, user_name: str | None) -> str:
+        """The name a tick made here is saved with: the app name linked to this user's person, else their Home Assistant name."""
+        if user_id:
+            person = next((s.entity_id for s in self.hass.states.async_all("person") if s.attributes.get("user_id") == user_id), None)
+            names = self.config_entry.options.get(CONF_NAMES) or {}
+            linked = next((n for n, p in names.items() if person and p == person), None)
+            if linked:
+                return linked
+        return user_name or "Home Assistant"
+
     @callback
     def build(self) -> Parsed:
         people = [(pk, self.docs[k.id][1]) for pk, k in self.people.items() if k.id in self.docs]
@@ -137,7 +166,7 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
             item = d[1].get("item") if d and isinstance(d[1], dict) else None
             if isinstance(item, dict):
                 items[sid] = item
-        return parse_household(people, self.refs, items, dt_util.now())
+        return self.link_names(parse_household(people, self.refs, items, dt_util.now()))
 
     # ---------- saving a change made in Home Assistant ----------
     async def async_change(self, target: list, change: Callable[[dict], bool]) -> None:
@@ -183,9 +212,6 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
                 return
             v, doc = nv, cur   # someone saved first: make the change on their version
         raise HomeAssistantError("Kept clashing with another change: try again")
-
-    def by_name(self, user_name: str | None) -> str:
-        return user_name or "Home Assistant"
 
     # ---------- the live link ----------
     def _ids(self) -> list[str]:

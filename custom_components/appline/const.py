@@ -5,7 +5,7 @@ import logging
 
 DOMAIN = "appline"
 LOGGER = logging.getLogger(__package__)
-VERSION = "0.2.2"   # keep in step with manifest.json
+VERSION = "0.2.3"   # keep in step with manifest.json
 
 BASE = "https://launcher.hedgepig.uk"
 SYNC_URL = f"{BASE}/api/sync"
@@ -20,6 +20,7 @@ CONF_PEOPLE = "people" # [{ code }] the household (options)
 CONF_HOUSEHOLD = "household"   # its name (the entry's title)
 CONF_PANELS = "panels" # [{ id, name, path }] apps shown in the sidebar
 CONF_CAL_DAILY = "calendar_daily"   # daily routines (feeds, walks) in the calendars; default on
+CONF_NAMES = "names"   # { name used in the apps: person entity }: who's who (Configure → Who's who)
 
 PANEL_PREFIX = "appline-"
 APP_ICONS = {"petline": "mdi:paw", "worldline": "mdi:clock-outline", "weatherline": "mdi:weather-partly-cloudy",

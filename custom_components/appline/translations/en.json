@@ -31,7 +31,8 @@
         "menu_options": {
           "add_person": "Add a person",
           "remove_person": "Remove people",
-          "settings": "Sidebar apps and calendars"
+          "settings": "Sidebar apps and calendars",
+          "names": "Who's who"
         }
       },
       "add_person": {
@@ -55,6 +56,10 @@
           "panels": "Apps",
           "calendar_daily": "Daily routines in the calendars"
         }
+      },
+      "names": {
+        "title": "Who's who",
+        "description": "Each name below is someone the apps say did something (or a person in this household). Link a name to a Home Assistant person: tasks then show done_by_person too, and a ✓ pressed in Home Assistant by that person's user is saved under this name, so the apps show the same name whichever way it was ticked."
       }
     },
     "error": {
@@ -67,7 +72,8 @@
       "keep_one": "Keep at least one person (or delete the integration)."
     },
     "abort": {
-      "cannot_connect": "Can't reach the apps' server to list the apps. Try again later."
+      "cannot_connect": "Can't reach the apps' server to list the apps. Try again later.",
+      "no_names": "No names yet: once someone ticks something in an app, it appears here."
     }
   },
   "entity": {

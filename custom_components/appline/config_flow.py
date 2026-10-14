@@ -10,11 +10,11 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFl
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
-    SelectOptionDict, SelectSelector, SelectSelectorConfig, TextSelector, TextSelectorConfig, TextSelectorType,
+    EntitySelector, EntitySelectorConfig, SelectOptionDict, SelectSelector, SelectSelectorConfig, TextSelector, TextSelectorConfig, TextSelectorType,
 )
 
 from . import api
-from .const import CONF_CAL_DAILY, CONF_CODE, CONF_HOUSEHOLD, CONF_PANELS, CONF_PEOPLE, DOMAIN
+from .const import CONF_CAL_DAILY, CONF_CODE, CONF_HOUSEHOLD, CONF_NAMES, CONF_PANELS, CONF_PEOPLE, DOMAIN
 from .hpcrypto import HALINK, SealError, keys_for, norm, open_doc
 
 CODE = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
@@ -66,7 +66,21 @@ class ApplineConfigFlow(ConfigFlow, domain=DOMAIN):
 
 class ApplineOptionsFlow(OptionsFlowWithReload):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        return self.async_show_menu(step_id="init", menu_options=["add_person", "remove_person", "settings"])
+        return self.async_show_menu(step_id="init", menu_options=["add_person", "remove_person", "names", "settings"])
+
+    async def async_step_names(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Who's who: link each name the apps use (who ticked something) to a Home Assistant person."""
+        coord = getattr(self.config_entry, "runtime_data", None)
+        current = dict(self.config_entry.options.get(CONF_NAMES) or {})
+        seen = sorted(set(coord.names_seen() if coord else []) | set(current), key=str.lower)
+        if not seen:
+            return self.async_abort(reason="no_names")
+        if user_input is not None:
+            names = {n: user_input[n] for n in seen if user_input.get(n)}
+            return self.async_create_entry(data={**self.config_entry.options, CONF_NAMES: names})
+        schema = vol.Schema({(vol.Optional(n, description={"suggested_value": current[n]}) if n in current else vol.Optional(n)):
+                             EntitySelector(EntitySelectorConfig(domain="person")) for n in seen})
+        return self.async_show_form(step_id="names", data_schema=schema)
 
     async def async_step_add_person(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}

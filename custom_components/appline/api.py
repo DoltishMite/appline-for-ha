@@ -66,4 +66,5 @@ async def get_apps(session: aiohttp.ClientSession) -> list[dict[str, Any]]:
     apps = j.get("apps") if isinstance(j, dict) else j
     # the launcher (Appline itself) is the hub's front page: its path is "" (launcher.hedgepig.uk/), not its id
     return [{"id": a["id"], "name": a.get("name") or a["id"], "path": "" if a.get("launcher") else (a.get("path") or a["id"])}
-            for a in apps or [] if isinstance(a, dict) and isinstance(a.get("id"), str) and not a.get("hidden") and not a.get("draft")]
+            for a in apps or [] if isinstance(a, dict) and isinstance(a.get("id"), str) and not a.get("hidden") and not a.get("draft")
+            and a.get("embed") is not False]   # "embed": false: can't work in a panel (the camera scanner, the games)
