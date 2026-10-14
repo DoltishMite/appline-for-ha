@@ -6,7 +6,7 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlowWithReload
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
@@ -64,7 +64,7 @@ class ApplineConfigFlow(ConfigFlow, domain=DOMAIN):
         return ApplineOptionsFlow()
 
 
-class ApplineOptionsFlow(OptionsFlowWithReload):
+class ApplineOptionsFlow(OptionsFlow):   # (no reload for every save: __init__._options_changed applies them)
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         return self.async_show_menu(step_id="init", menu_options=["add_person", "remove_person", "names", "settings"])
 

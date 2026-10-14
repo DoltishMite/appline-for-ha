@@ -91,6 +91,7 @@ Gameline, Wordline, Scanline, Sleepline, Noteline, Scoreline.
   Assistant by the owner.
 
 ## Changelog
+- 0.5.1 (2026-10-15): Configure saves (Who's who, sidebar apps, calendars) apply without a reload, so entities no longer blink unavailable; only adding or removing a person reloads. A server that can't be reached for up to 30 minutes keeps the last copies (worked out afresh each minute) instead of making everything unavailable.
 - 0.5.0 (2026-10-14): Homeline, Plantline, Cookline; Carline Details; Binline They're out (+ calendar ✓), the same bins shown once across a household.
 - 0.4.0 (2026-10-14): Carline (due dates, renewed buttons, mileage) and Binline (collections, put out tonight).
 - 0.3.0 (2026-10-14): Countline, Dayline, Renewline and Listline (to-do lists, two-way).

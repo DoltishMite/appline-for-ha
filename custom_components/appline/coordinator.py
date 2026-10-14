@@ -31,10 +31,11 @@ from homeassistant.util import dt as dt_util
 
 from . import api
 from .const import CONF_CODE, CONF_NAMES, CONF_PEOPLE, DOMAIN, HEADERS, LIVE_URL, LOGGER
-from .hpcrypto import HALINK, TOGETHER, Keys, SealError, keys_for, open_doc, seal_doc
+from .hpcrypto import HALINK, TOGETHER, Keys, SealError, keys_for, norm, open_doc, seal_doc
 from .parsers import PARSERS, Parsed, parse_household, sync_share_codes
 
 POLL = timedelta(minutes=5)
+GRACE = timedelta(minutes=30)   # how long the last copies stand in when the server can't be reached
 TICK = timedelta(minutes=1)
 
 
@@ -56,6 +57,9 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
         super().__init__(hass, LOGGER, config_entry=entry, name=DOMAIN, update_interval=POLL)
         self.session = async_get_clientsession(hass)
         self.people: dict[str, Keys] = {}
+        self.codes = sorted(norm(p[CONF_CODE]) for p in entry.options.get(CONF_PEOPLE, []))   # to notice a change of people
+        self._last_ok: float | None = None
+        self._away = False    # when the server last answered (monotonic), to ride out short outages
         for p in entry.options.get(CONF_PEOPLE, []):
             k = keys_for(p[CONF_CODE], HALINK)
             self.people[person_key(k)] = k
@@ -118,6 +122,13 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
             except api.Refused as err:
                 raise UpdateFailed("The apps' server refused Home Assistant: it needs the update that lets the integration in") from err
             except api.ApiError as err:
+                # The apps' server is away for a moment (a restart, the PC asleep): keep what was fetched last, worked out afresh
+                # (states move on with the clock), for up to half an hour, rather than every entity blinking unavailable.
+                if self.docs and self._last_ok is not None and time.monotonic() - self._last_ok < GRACE.total_seconds():
+                    if not self._away:
+                        LOGGER.info("Can't reach the apps' server (%s): showing what was fetched last", err)
+                        self._away = True
+                    return self.build()
                 raise UpdateFailed(str(err)) from err
             except SealError:
                 self.docs.pop(k.id, None)
@@ -126,6 +137,7 @@ class ApplineCoordinator(DataUpdateCoordinator[Parsed]):
             raise UpdateFailed("None of the household's link copies could be opened")
         if await self._follow_shared():
             await self._subscribe()
+        self._last_ok, self._away = time.monotonic(), False
         return self.build()
 
     def names_seen(self) -> list[str]:

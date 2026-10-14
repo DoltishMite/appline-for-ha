@@ -5,7 +5,7 @@ import logging
 
 DOMAIN = "appline"
 LOGGER = logging.getLogger(__package__)
-VERSION = "0.5.0"   # keep in step with manifest.json
+VERSION = "0.5.1"   # keep in step with manifest.json
 
 BASE = "https://launcher.hedgepig.uk"
 SYNC_URL = f"{BASE}/api/sync"

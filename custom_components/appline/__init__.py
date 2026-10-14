@@ -13,7 +13,8 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 
-from .const import APP_ICONS, BASE, CONF_PANELS, DOMAIN, LOGGER, PANEL_PREFIX
+from .const import APP_ICONS, BASE, CONF_CODE, CONF_PANELS, CONF_PEOPLE, DOMAIN, LOGGER, PANEL_PREFIX
+from .hpcrypto import norm
 from .coordinator import ApplineCoordinator
 from .entity import device_identifier
 
@@ -32,8 +33,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ApplineConfigEntry) -> b
     entry.async_create_background_task(hass, coordinator.run_live(), f"{DOMAIN} live link")
 
     _add_panels(hass, entry)
+    entry.async_on_unload(entry.add_update_listener(_options_changed))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
+
+
+async def _options_changed(hass: HomeAssistant, entry: ApplineConfigEntry) -> None:
+    """Configure saved. Only a change of people needs a reload (new copies to fetch); Who's who, the sidebar apps and the calendar
+    option apply in place, so the entities don't blink unavailable while it reloads."""
+    coordinator = entry.runtime_data
+    codes = sorted(norm(p[CONF_CODE]) for p in entry.options.get(CONF_PEOPLE, []))
+    if codes != coordinator.codes:
+        hass.config_entries.async_schedule_reload(entry.entry_id)
+        return
+    for path in coordinator.panels:
+        frontend.async_remove_panel(hass, path, warn_if_unknown=False)
+    _add_panels(hass, entry)
+    coordinator.data = coordinator.build()
+    coordinator.async_update_listeners()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ApplineConfigEntry) -> bool:

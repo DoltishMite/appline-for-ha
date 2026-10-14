@@ -76,5 +76,5 @@ backups safe. Anyone with a link code can see and change what that person ticked
 
 ## Troubleshooting
 - *"The apps' server isn't letting Home Assistant in yet"*: the server needs the update that lets this integration read and save.
-- Sensors go **unavailable** while the apps' server is off. They come back by themselves.
+- If the apps' server can't be reached, sensors keep the last data for up to half an hour (states still move on with the clock), then go **unavailable** until it's back. They come back by themselves.
 - **Settings → System → Logs**, search "appline". Diagnostics (on the integration's ⋮) contain counts only, never codes or data.
