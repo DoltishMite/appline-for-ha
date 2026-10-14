@@ -118,6 +118,18 @@
       },
       "list_left": {
         "name": "{name} left"
+      },
+      "car_due_days": {
+        "name": "{due}"
+      },
+      "car_mileage": {
+        "name": "Mileage"
+      },
+      "bin_next": {
+        "name": "{name}"
+      },
+      "bins_next": {
+        "name": "Next collection"
       }
     },
     "binary_sensor": {
@@ -126,6 +138,12 @@
       },
       "renewals_attention": {
         "name": "Needs attention"
+      },
+      "car_attention": {
+        "name": "Needs attention"
+      },
+      "bins_put_out": {
+        "name": "Put out tonight"
       }
     },
     "calendar": {
@@ -146,11 +164,20 @@
       },
       "renewal_calendar": {
         "name": "Renewals"
+      },
+      "car_calendar": {
+        "name": "Car dates"
+      },
+      "bin_calendar": {
+        "name": "Bin days"
       }
     },
     "button": {
       "pet_task_done": {
         "name": "{task} done"
+      },
+      "car_due_renew": {
+        "name": "{due} renewed"
       }
     },
     "todo": {

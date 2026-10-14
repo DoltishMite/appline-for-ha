@@ -72,6 +72,8 @@ and events).
 | Dayline (`birthline`) | `onYear`, `next`, `starts` | `birthline.….days`, `birthline.calendar` (yearly dates + events) |
 | Renewline (`deadline`) | renewals.html `status`, `daysLeft` | `deadline.….days` (+ status), `deadline.expired`, `.due`, `.attention`, `.calendar` |
 | Listline (`listline`) | lists.html add box, checkbox (repeat `last`), `key()` | `listline.….todo` (to-do list, two-way), `.left` |
+| Carline (`carline`) | car.html `dueState`, `addMonths`, `doneDialog` defaults (renew) | device per car: `….<due>.days`, `.renew` (button), `.odo`, `.attention`; `carline.calendar`. Fuelline/Chargeline odometers aren't sent |
+| Binline (`binline`) | bins.html `collections`, the Put-out-tonight banner | `binline.next`, `binline.….next` per bin, `binline.put_out`, `binline.calendar` (each person's own options, changes and bank holidays) |
 Next batches (agreed scope "minus ones where it makes zero sense"): Carline, Medline, Homeline, Plantline, Binline, Rotaline, Habitline,
 Clockline alarms and timers; then Pantryline, Leaveline, Budgetline, Meterline, Studyline, Packline, Readline, Mileline; then the live-data
 apps (Pingline, Statusline, Powerline, Fuelline, Tideline, Breathline, Riverline, Departline, Auroraline, Solarline…). Left out (nothing to
@@ -86,6 +88,7 @@ Gameline, Wordline, Scanline, Sleepline, Noteline, Scoreline.
   Assistant by the owner.
 
 ## Changelog
+- 0.4.0 (2026-10-14): Carline (due dates, renewed buttons, mileage) and Binline (collections, put out tonight).
 - 0.3.0 (2026-10-14): Countline, Dayline, Renewline and Listline (to-do lists, two-way).
 - 0.2.3 (2026-10-14): panels open with ?hp=ha (the apps hide what a panel can't do), Scanline and Gameline left out of Sidebar apps; Configure → Who's who links app names to Home Assistant people (done_by_person; HA ticks saved under the linked name).
 - 0.2.2 (2026-10-14): Appline (the launcher) in the sidebar opens the launcher (it pointed at /tools/, a blank page).

@@ -7,7 +7,7 @@ Brings the apps at [launcher.hedgepig.uk](https://launcher.hedgepig.uk) into Hom
 - **Two-way.** Tick a task off from a dashboard or an automation, or add an appointment from a pet's calendar, and it shows in the app.
 - **Apps in the sidebar.** Pick apps to show in Home Assistant's sidebar.
 
-Apps so far: **Petline**, **Countline**, **Dayline**, **Renewline** and **Listline** (as Home Assistant to-do lists). More are coming.
+Apps so far: **Petline**, **Countline**, **Dayline**, **Renewline**, **Listline** (as Home Assistant to-do lists), **Carline** and **Binline**. More are coming.
 
 ## Install (HACS)
 1. HACS → ⋮ → **Custom repositories** → `https://github.com/DoltishMite/appline-for-ha`, type **Integration** → Add.
@@ -61,6 +61,8 @@ Tick it from an automation: `action: button.press` with `target: { entity_id: bu
 | Countline | per countdown: *Name* (days until it; a repeating one moves on to its next date as in the app) and *Name* date (a timestamp); a **Countdowns** calendar |
 | Dayline | per birthday or yearly date: *Name's birthday* (days until, `turning` the age); a **Calendar** with those and Dayline's own events (repeats, multi-day, times) |
 | Renewline | per item: *Name* (days left, `status`: bad / warn / maint / soon / ok / zz), **Expired** and **Due soon** counts, **Needs attention**, a **Renewals** calendar |
+| Carline | per car (a device): each due date (*MOT*, *Road tax*, …: days left, `state` over / soon / ok, `miles_left` for a service due at a mileage), a *… renewed* button (moves the date on as the app's Done does), **Mileage**, **Needs attention**; a **Car dates** calendar |
+| Binline | **Next collection** (days, which bins), each bin's next collection, **Put out tonight** (from noon the day before until marked out in the app), a **Bin days** calendar; skips, moves, pauses and bank holidays as in the app |
 | Listline | each list as a **to-do list** (add, tick, edit, remove, reorder from Home Assistant; due dates on to-do lists), and *Name* left (how many) |
 
 ## Privacy

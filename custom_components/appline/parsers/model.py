@@ -6,7 +6,7 @@ from typing import Any
 
 SENSOR, BINARY, CALENDAR, BUTTON = "sensor", "binary_sensor", "calendar", "button"
 ENUM, TIMESTAMP, COUNT, PROBLEM, EVENTS, PRESS = "enum", "timestamp", "count", "problem", "events", "press"
-DAYS, LIST = "days", "list"   # DAYS: a number of days (a duration); LIST: a to-do list (TODO)
+DAYS, LIST, DISTANCE = "days", "list", "distance"   # DAYS: a number of days (a duration); LIST: a to-do list (TODO)
 TODO = "todo"
 
 

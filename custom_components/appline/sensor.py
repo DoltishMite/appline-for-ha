@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
-from homeassistant.const import UnitOfTime
+from homeassistant.const import UnitOfLength, UnitOfTime
 from homeassistant.core import HomeAssistant
 
 from . import ApplineConfigEntry
 from .entity import ApplineEntity
-from .parsers.model import COUNT, DAYS, ENUM, SENSOR, TIMESTAMP
+from .parsers.model import COUNT, DAYS, DISTANCE, ENUM, SENSOR, TIMESTAMP
 from .platform import follow
 
 
@@ -25,6 +25,9 @@ class ApplineSensor(ApplineEntity, SensorEntity):
         elif t.kind == DAYS:   # days until (negative: since); shown as a duration
             self._attr_device_class = SensorDeviceClass.DURATION
             self._attr_native_unit_of_measurement = UnitOfTime.DAYS
+        elif t.kind == DISTANCE:   # an odometer reading, in miles (as the apps keep it)
+            self._attr_device_class = SensorDeviceClass.DISTANCE
+            self._attr_native_unit_of_measurement = UnitOfLength.MILES
 
     @property
     def native_value(self):
