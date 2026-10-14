@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect your apps",
+        "description": "Enter a sync code (Settings → Sync & Backup in any app) to bring in everything in that setup, or one shared thing's code (👥 Share) to bring in just that. The code is kept in Home Assistant and used here to open your data; the apps' server never sees what's in it.",
+        "data": { "code": "Code" },
+        "data_description": { "code": "Letters and digits, with or without the dashes." }
+      }
+    },
+    "error": {
+      "invalid_code": "That code doesn't look right: check it and try again.",
+      "not_found": "Nothing is saved under that code. Check that sync is switched on in the app.",
+      "refused": "The apps' server isn't letting Home Assistant in yet. It needs its update first.",
+      "cannot_connect": "Can't reach the apps' server. Is it running?"
+    },
+    "abort": {
+      "already_configured": "That code is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Apps in the sidebar",
+        "description": "Pick the apps to show in Home Assistant's sidebar. They open as they do in a browser. This only works when Home Assistant is opened at its hedgepig.uk address.",
+        "data": { "panels": "Apps" }
+      }
+    },
+    "abort": {
+      "cannot_connect": "Can't reach the apps' server to list the apps. Try again later."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "pet_task": {
+        "name": "{task}",
+        "state": {
+          "over": "Overdue",
+          "late": "Late",
+          "due": "Due now",
+          "soon": "Soon",
+          "later": "Later",
+          "done": "Done"
+        }
+      },
+      "pet_task_next": { "name": "{task} next due" },
+      "pet_todo": { "name": "To do now" },
+      "pets_todo": { "name": "Pets to do now" }
+    },
+    "binary_sensor": {
+      "pet_needs_care": { "name": "Needs care" }
+    }
+  }
+}
