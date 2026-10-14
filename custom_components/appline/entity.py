@@ -33,6 +33,7 @@ class ApplineEntity(CoordinatorEntity[ApplineCoordinator]):
             entry_type=DeviceEntryType.SERVICE,
             via_device=device_identifier(entry_id, d.via) if d.via else None,
         )
+        self._attr_entity_registry_enabled_default = t.enabled
         self._apply(t)
 
     @property

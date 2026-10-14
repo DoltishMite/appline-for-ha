@@ -16,7 +16,7 @@ from .const import APP_ICONS, BASE, CONF_PANELS, DOMAIN, LOGGER, PANEL_PREFIX
 from .coordinator import ApplineCoordinator
 from .entity import device_identifier
 
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.CALENDAR]
 type ApplineConfigEntry = ConfigEntry[ApplineCoordinator]
 
 

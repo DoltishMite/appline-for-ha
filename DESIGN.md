@@ -42,6 +42,8 @@ config entry (code) ──▶ coordinator ── GET /api/sync?id=… (main doc 
 | | | `petline.<pet>.needs_care` | binary_sensor / problem | `pet_needs_care` |
 | | | `petline.<pet>.<task>.status` | sensor / enum (over, late, due, soon, later, done) | `pet_task` (`{task}`) |
 | | | `petline.<pet>.<task>.next` | sensor / timestamp | `pet_task_next` (`{task} next due`) |
+| | | `petline.<pet>.calendar` | calendar (disabled at first) | `pet_calendar` |
+| | Petline | `petline.calendar` | calendar: every pet (ticks from the log, feeds/walks at their times, treatments all day every N days, appointments) | `pets_calendar` |
 
 ## Tested
 - Here: crypto against the kit's own sealing (Node, `make-vector.mjs`), Petline parsing, and parity with `pets.html` `status()` over five days
@@ -49,4 +51,4 @@ config entry (code) ──▶ coordinator ── GET /api/sync?id=… (main doc 
   `compileall` + `pyflakes` here and by hassfest / the HACS action on GitHub; the rest is checked in Home Assistant by the owner.
 
 ## Changelog
-- 0.1.0 (2026-10-14): first version. Petline entities, sidebar panels, live link.
+- 0.1.0 (2026-10-14): first version. Petline entities and calendars (all pets on; one per pet, off at first; daily routines optional), sidebar panels, live link.

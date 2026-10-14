@@ -8,7 +8,8 @@ The app's saved data (web/petline/APP.md, pets.html "data"):
 status() is a port of pets.html status(): keep the two the same (states, the one-hour window for meals, 7 / 3 days for "soon").
 
 Devices: "Petline" (the app), and one per pet under it. Entities, per task: its state (enum) and when it's next due (timestamp);
-per pet: how many things need doing now, and a "needs care" problem sensor; for the app: the total.
+per pet: how many things need doing now, a "needs care" problem sensor and a calendar (off at first); for the app: the total and a
+calendar of every pet's care (events() below: what was done, from the log, and what's coming, worked out the way status() does).
 """
 from __future__ import annotations
 
@@ -16,7 +17,7 @@ import json
 from datetime import date, datetime, time, timedelta
 from typing import Any
 
-from .model import BINARY, COUNT, ENUM, PROBLEM, SENSOR, TIMESTAMP, Device, Parsed, Thing
+from .model import BINARY, CALENDAR, COUNT, ENUM, EVENTS, PROBLEM, SENSOR, TIMESTAMP, Device, Event, Parsed, Thing
 
 APP = "petline"
 NAME = "Petline"
@@ -131,6 +132,7 @@ def from_shared(item: dict, item_id: str) -> dict[str, str]:
 def parse(data: dict[str, str], shared: dict[str, dict], now: datetime, out: Parsed, app_name: str | None = None) -> None:
     """Add Petline's devices and entities to out. shared: { pet id: the shared copy's item } (newer than the synced copy)."""
     pets = _json(data.get(PETS), [])
+    shown = []
     opts = _json(data.get(OPTS), {})
     remind_at = opts.get("remindAt") if isinstance(opts, dict) and isinstance(opts.get("remindAt"), str) else "09:00"
     if not isinstance(pets, list):
@@ -143,6 +145,7 @@ def parse(data: dict[str, str], shared: dict[str, dict], now: datetime, out: Par
         pid = pet["id"]
         if isinstance(shared.get(pid), dict):
             pet = dict(shared[pid], id=pid)
+        shown.append(pet)
         dev = f"{APP}.{pid}"
         out.add_device(Device(dev, str(pet.get("name") or "Pet"), "Pet", via=APP))
         todo = []
@@ -172,4 +175,86 @@ def parse(data: dict[str, str], shared: dict[str, dict], now: datetime, out: Par
         total += len(todo)
         out.add(Thing(f"{dev}.todo", dev, SENSOR, COUNT, "pet_todo", len(todo), {}, {"tasks": todo}, "mdi:paw"))
         out.add(Thing(f"{dev}.needs_care", dev, BINARY, PROBLEM, "pet_needs_care", bool(todo), {}, {"tasks": todo}))
+        out.add(Thing(f"{dev}.calendar", dev, CALENDAR, EVENTS, "pet_calendar", None, icon="mdi:paw", app=APP,
+                      data={"pets": [pet], "remind_at": remind_at, "prefix": False}, enabled=False))
     out.add(Thing(f"{APP}.todo", APP, SENSOR, COUNT, "pets_todo", total, {}, {}, "mdi:paw"))
+    out.add(Thing(f"{APP}.calendar", APP, CALENDAR, EVENTS, "pets_calendar", None, icon="mdi:calendar-heart", app=APP,
+                  data={"pets": shown, "remind_at": remind_at, "prefix": True}))
+
+
+# ---------- the calendar ----------
+MEAL_MINUTES, APPT_MINUTES, DONE_MINUTES = 30, 60, 15
+MAX_DAYS = 400   # how far daily routines are repeated in one request
+
+
+def events(data: dict, start: datetime, end: datetime, now: datetime, daily: bool = True) -> list[Event]:
+    """Events between start and end (aware datetimes): ticks from the log (✓, who), and what's coming: each meal / walk slot
+    (daily=True), treatments all day on the day they're due and then every N days, appointments. Something overdue sits on today."""
+    tz = now.tzinfo
+    today = now.date()
+    out: list[Event] = []
+    for pet in data.get("pets") or []:
+        pre = f"{pet.get('name') or 'Pet'}: " if data.get("prefix") else ""
+        pid = pet.get("id")
+        tasks = {t["id"]: t for t in pet.get("tasks") or [] if isinstance(t, dict) and isinstance(t.get("id"), str)}
+        for l in pet.get("log") or []:
+            t = tasks.get(l.get("task")) if isinstance(l, dict) else None
+            if not t or not isinstance(l.get("t"), (int, float)) or t.get("type") == "appt" or (t.get("type") == "meal" and not daily):
+                continue
+            at = datetime.fromtimestamp(l["t"] / 1000, tz)
+            who = f" ({l['by']})" if l.get("by") else ""
+            out.append(Event(f"{pid}-{l.get('id')}", f"✓ {pre}{t.get('name')}{who}", at, at + timedelta(minutes=DONE_MINUTES)))
+        for t in tasks.values():
+            s = status(pet, t, now, data.get("remind_at") or "09:00")
+            if s is None:
+                continue
+            name, note = f"{pre}{t.get('name') or 'Task'}", str(t.get("note") or "")
+            kind = t.get("type")
+            if kind == "meal":
+                if not daily:
+                    continue
+                times = sorted(str(x) for x in t.get("times") or [])
+                done = sum(1 for l in pet.get("log") or [] if isinstance(l, dict) and l.get("task") == t["id"]
+                           and isinstance(l.get("t"), (int, float)) and datetime.fromtimestamp(l["t"] / 1000, tz).date() == today)
+                d, last = max(start.astimezone(tz).date(), today), min(end.astimezone(tz).date(), today + timedelta(days=MAX_DAYS))
+                while d <= last:
+                    for i, hm in enumerate(times):
+                        if d == today and i < done:
+                            continue   # already ticked (it's in the log)
+                        at = _at(d, hm, tz)
+                        if at:
+                            out.append(Event(f"{pid}-{t['id']}-{d.isoformat()}-{i}", name, at, at + timedelta(minutes=MEAL_MINUTES), note))
+                    d += timedelta(days=1)
+            elif kind == "appt":
+                d = _ymd(t.get("next"))
+                label = ("✓ " if t.get("done") else "") + name
+                if t.get("time"):
+                    at = _at(d, t["time"], tz)
+                    if at:
+                        out.append(Event(f"{pid}-{t['id']}-{d.isoformat()}", label, at, at + timedelta(minutes=APPT_MINUTES), note))
+                else:
+                    out.append(Event(f"{pid}-{t['id']}-{d.isoformat()}", label, d, d + timedelta(days=1), note))
+            else:
+                if s["due"] is None:
+                    continue
+                d = s["due"].date()
+                try:
+                    every = int(t.get("days") or 0)
+                except (TypeError, ValueError):
+                    every = 0
+                if d < today:   # overdue: on today, marked, then the cycle carries on from today
+                    out.append(Event(f"{pid}-{t['id']}-over", f"{name} (overdue since {d.isoformat()})", today, today + timedelta(days=1), note))
+                    d = today + timedelta(days=every) if every > 0 else None
+                last = end.astimezone(tz).date()
+                n = 0
+                while d is not None and d <= last and n < 1000:
+                    out.append(Event(f"{pid}-{t['id']}-{d.isoformat()}", name, d, d + timedelta(days=1), note))
+                    if every <= 0:
+                        break
+                    d += timedelta(days=every)
+                    n += 1
+
+    def as_dt(x):
+        return x if isinstance(x, datetime) else datetime.combine(x, time(0), tzinfo=tz)
+    hit = [e for e in out if as_dt(e.end) > start and as_dt(e.start) < end]
+    return sorted(hit, key=lambda e: (as_dt(e.start), e.summary))

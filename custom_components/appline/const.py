@@ -17,6 +17,7 @@ HEADERS = {"X-Appline-Client": f"ha/{VERSION}"}
 CONF_CODE = "code"     # a personal sync code or one shared thing's code (a secret: never log it)
 CONF_KIND = "kind"     # "sync" or "together"
 CONF_PANELS = "panels" # [{ id, name, path }] apps shown in the sidebar
+CONF_CAL_DAILY = "calendar_daily"   # daily routines (feeds, walks) in the calendars; default on
 
 PANEL_PREFIX = "appline-"
 APP_ICONS = {"petline": "mdi:paw", "worldline": "mdi:clock-outline", "weatherline": "mdi:weather-partly-cloudy",

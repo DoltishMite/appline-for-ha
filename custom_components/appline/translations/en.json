@@ -4,8 +4,12 @@
       "user": {
         "title": "Connect your apps",
         "description": "Enter a sync code (Settings → Sync & Backup in any app) to bring in everything in that setup, or one shared thing's code (👥 Share) to bring in just that. The code is kept in Home Assistant and used here to open your data; the apps' server never sees what's in it.",
-        "data": { "code": "Code" },
-        "data_description": { "code": "Letters and digits, with or without the dashes." }
+        "data": {
+          "code": "Code"
+        },
+        "data_description": {
+          "code": "Letters and digits, with or without the dashes."
+        }
       }
     },
     "error": {
@@ -21,9 +25,12 @@
   "options": {
     "step": {
       "init": {
-        "title": "Apps in the sidebar",
-        "description": "Pick the apps to show in Home Assistant's sidebar. They open as they do in a browser. This only works when Home Assistant is opened at its hedgepig.uk address.",
-        "data": { "panels": "Apps" }
+        "title": "Options",
+        "description": "Pick the apps to show in Home Assistant's sidebar. They open as they do in a browser. This only works when Home Assistant is opened at its hedgepig.uk address. Daily routines: show every feed and walk in the calendars (treatments and appointments are always there).",
+        "data": {
+          "panels": "Apps",
+          "calendar_daily": "Daily routines in the calendars"
+        }
       }
     },
     "abort": {
@@ -43,12 +50,28 @@
           "done": "Done"
         }
       },
-      "pet_task_next": { "name": "{task} next due" },
-      "pet_todo": { "name": "To do now" },
-      "pets_todo": { "name": "Pets to do now" }
+      "pet_task_next": {
+        "name": "{task} next due"
+      },
+      "pet_todo": {
+        "name": "To do now"
+      },
+      "pets_todo": {
+        "name": "Pets to do now"
+      }
     },
     "binary_sensor": {
-      "pet_needs_care": { "name": "Needs care" }
+      "pet_needs_care": {
+        "name": "Needs care"
+      }
+    },
+    "calendar": {
+      "pets_calendar": {
+        "name": "Pet care"
+      },
+      "pet_calendar": {
+        "name": "Care"
+      }
     }
   }
 }

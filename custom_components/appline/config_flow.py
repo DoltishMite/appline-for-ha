@@ -14,7 +14,7 @@ from homeassistant.helpers.selector import (
 )
 
 from . import api
-from .const import CONF_CODE, CONF_KIND, CONF_PANELS, DOMAIN
+from .const import CONF_CAL_DAILY, CONF_CODE, CONF_KIND, CONF_PANELS, DOMAIN
 from .hpcrypto import SYNC, TOGETHER, SealError, keys_for, norm, open_doc
 from .parsers import PARSERS
 
@@ -84,9 +84,11 @@ class ApplineOptionsFlow(OptionsFlowWithReload):
         by_id = {a["id"]: a for a in apps}
         if user_input is not None:
             chosen = [by_id[i] for i in user_input.get(CONF_PANELS, []) if i in by_id]
-            return self.async_create_entry(data={**self.config_entry.options, CONF_PANELS: chosen})
+            return self.async_create_entry(data={**self.config_entry.options, CONF_PANELS: chosen,
+                                                 CONF_CAL_DAILY: bool(user_input.get(CONF_CAL_DAILY, True))})
         current = [p["id"] for p in self.config_entry.options.get(CONF_PANELS, []) if p["id"] in by_id]
         schema = vol.Schema({vol.Optional(CONF_PANELS, default=current): SelectSelector(SelectSelectorConfig(
             options=[SelectOptionDict(value=a["id"], label=a["name"]) for a in sorted(apps, key=lambda a: a["name"].lower())],
-            multiple=True))})
+            multiple=True)),
+            vol.Optional(CONF_CAL_DAILY, default=self.config_entry.options.get(CONF_CAL_DAILY, True)): bool})
         return self.async_show_form(step_id="init", data_schema=schema)

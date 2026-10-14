@@ -5,6 +5,7 @@ Each app with a parser is a module here with:
   parse(data, shared, now, out, app_name)   add its devices and things to out (a Parsed)
   share_codes(data)             { item id: share code } for the things it shares (the kit's <app>_shared_v1)
   from_shared(item, item_id)    one shared thing on its own (a share code entered in HA) as the app's saved data
+  events(data, start, end, now, daily)   only if it makes CALENDAR things: their events (model.Event) in that window
 Everything is rebuilt from the documents on every change, so entities follow what's in the apps: a new pet, task or preset
 appears, a removed one goes, a renamed one keeps its entity (keys are the apps' own ids).
 """
@@ -15,11 +16,11 @@ from datetime import datetime
 from typing import Any
 
 from . import petline
-from .model import Device, Parsed, Thing
+from .model import Device, Event, Parsed, Thing
 
 PARSERS = {m.APP: m for m in (petline,)}
 
-__all__ = ["PARSERS", "Device", "Parsed", "Thing", "app_data", "app_name", "parse_sync", "parse_shared", "sync_share_codes"]
+__all__ = ["PARSERS", "Device", "Event", "Parsed", "Thing", "app_data", "app_name", "parse_sync", "parse_shared", "sync_share_codes"]
 
 
 def app_data(sync_doc: Any, app: str) -> dict[str, str] | None:
