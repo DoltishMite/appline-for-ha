@@ -90,7 +90,18 @@ Gameline, Wordline, Scanline, Sleepline, Noteline, Scoreline.
   Windows, so the HA-facing modules are checked by `pyflakes` here and by hassfest / the HACS action on GitHub; the rest is checked in Home
   Assistant by the owner.
 
+## Netline presence (0.6.0)
+| App | Device | Thing key | Platform / kind | Translation key |
+|---|---|---|---|---|
+| Netline (`siteline`) | Netline | `siteline.<person>.<hardware address>.home` | binary_sensor / presence: seen on the network in the last 20 minutes | `device_home` (`{name}`) |
+| | | `siteline.home` | sensor / count: tracked devices home | `devices_home` |
+Data: `siteline_presence_v1` [{ id (MAC), name, home, last (ms), ip, net }], the devices the person ticks in Netline (Devices → 🏠 Track presence) and in
+their HA link's checklist. Netline Agent rebuilds it each scan and writes the ticked ones into the HA link copy itself (agents/NetlineAgent
+DevicesModule.ToHomeAssistant), so presence stays fresh with no page open. Home is worked out again from `last` each minute (20 minutes, as
+the agent), so a device stops being home when it stops being seen, even if no list arrives (the scanning computer off). Read-only.
+
 ## Changelog
+- 0.6.0 (2026-10-27): Netline presence: each tracked device home or away (binary sensor, presence), and how many are home.
 - 0.5.1 (2026-10-15): Configure saves (Who's who, sidebar apps, calendars) apply without a reload, so entities no longer blink unavailable; only adding or removing a person reloads. A server that can't be reached for up to 30 minutes keeps the last copies (worked out afresh each minute) instead of making everything unavailable.
 - 0.5.0 (2026-10-14): Homeline, Plantline, Cookline; Carline Details; Binline They're out (+ calendar ✓), the same bins shown once across a household.
 - 0.4.0 (2026-10-14): Carline (due dates, renewed buttons, mileage) and Binline (collections, put out tonight).

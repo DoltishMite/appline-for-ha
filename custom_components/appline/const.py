@@ -5,7 +5,7 @@ import logging
 
 DOMAIN = "appline"
 LOGGER = logging.getLogger(__package__)
-VERSION = "0.5.1"   # keep in step with manifest.json
+VERSION = "0.6.0"   # keep in step with manifest.json
 
 BASE = "https://launcher.hedgepig.uk"
 SYNC_URL = f"{BASE}/api/sync"
@@ -28,4 +28,4 @@ APP_ICONS = {"petline": "mdi:paw", "worldline": "mdi:clock-outline", "weatherlin
              "pingline": "mdi:access-point-network", "tideline": "mdi:waves", "tools": "mdi:apps", "countline": "mdi:timer-sand",
              "birthline": "mdi:calendar-star", "listline": "mdi:format-list-checks", "carline": "mdi:car",
              "binline": "mdi:trash-can", "homeline": "mdi:home-clock", "plantline": "mdi:sprout",
-             "cookline": "mdi:silverware-fork-knife"}
+             "cookline": "mdi:silverware-fork-knife", "siteline": "mdi:lan"}

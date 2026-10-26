@@ -15,10 +15,10 @@ import json
 from datetime import datetime
 from typing import Any
 
-from . import binline, birthline, carline, cookline, countline, deadline, homeline, listline, petline, plantline
+from . import binline, birthline, carline, cookline, countline, deadline, homeline, listline, petline, plantline, siteline
 from .model import Device, Event, Parsed, Thing
 
-PARSERS = {m.APP: m for m in (petline, countline, birthline, deadline, listline, carline, binline, homeline, plantline, cookline)}
+PARSERS = {m.APP: m for m in (petline, countline, birthline, deadline, listline, carline, binline, homeline, plantline, cookline, siteline)}
 
 __all__ = ["PARSERS", "Device", "Event", "Parsed", "Thing", "app_data", "app_name", "parse_household", "parse_sync", "parse_shared", "sync_share_codes"]
 

@@ -6,6 +6,7 @@ from typing import Any
 
 SENSOR, BINARY, CALENDAR, BUTTON = "sensor", "binary_sensor", "calendar", "button"
 ENUM, TIMESTAMP, COUNT, PROBLEM, EVENTS, PRESS = "enum", "timestamp", "count", "problem", "events", "press"
+PRESENCE = "presence"   # BINARY: home (on) or away (Netline's tracked devices)
 DAYS, LIST, DISTANCE = "days", "list", "distance"   # DAYS: a number of days (a duration); LIST: a to-do list (TODO)
 TODO = "todo"
 
@@ -23,7 +24,7 @@ class Thing:
     key: str                       # unique within the config entry and stable: built from the apps' item ids, never names
     device: str                    # Device.key
     platform: str                  # SENSOR or BINARY
-    kind: str                      # ENUM, TIMESTAMP, COUNT or PROBLEM
+    kind: str                      # ENUM, TIMESTAMP, COUNT, PROBLEM or PRESENCE
     translation_key: str
     state: Any
     placeholders: dict[str, str] = field(default_factory=dict)
