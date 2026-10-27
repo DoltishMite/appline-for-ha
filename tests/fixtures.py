@@ -1,4 +1,4 @@
-"""Petline example data: the app's own tour demo (web/kit/tours.json), with its relative dates filled in for a fixed day."""
+"""Petline example data: the app's own tour demo (web/petline/tour.json), with its relative dates filled in for a fixed day."""
 from __future__ import annotations
 
 import json
