@@ -1,4 +1,4 @@
-"""Netline (the network monitor) -> presence entities. Pure Python.
+"""Wardyn (the network monitor; it was Netline's until 2026-11-02, same app id and keys) -> presence entities. Pure Python.
 
 Saved data (web/siteline/APP.md, "Devices"): siteline_presence_v1 [{ id (the device's hardware address), name, home, last (ms, when any
 computer last saw it on the network), ip, net }]: the devices the person tracks (Netline: Devices → 🏠 Track presence in Home Assistant).
@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from .common import household, single, who
 from .model import BINARY, COUNT, PRESENCE, SENSOR, Device, Parsed, Thing
 
-APP, NAME = "siteline", "Netline"
+APP, NAME = "siteline", "Wardyn"   # (Netline's network monitor, its own site since 2026-11-02: the device's name)
 LIST_KEY = "siteline_presence_v1"
 HOME_FOR = timedelta(minutes=20)   # as Netline Agent (Devices/DevicesModule.cs HomeFor)
 

@@ -15,6 +15,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 
 from .const import APP_ICONS, BASE, CONF_CODE, CONF_PANELS, CONF_PEOPLE, DOMAIN, LOGGER, PANEL_PREFIX
 from .hpcrypto import norm
+from .parsers import applist
 from .coordinator import ApplineCoordinator
 from .entity import device_identifier
 
@@ -61,10 +62,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ApplineConfigEntry) -> 
 
 
 def panel_url(p: dict) -> str:
-    """The app's hub address. The launcher is the front page (saved before 0.2.2 as path "tools", which doesn't exist)."""
-    path = "" if p.get("id") == "tools" else str(p.get("path") or "").strip("/")
-    # ?hp=ha: the apps hide what a Home Assistant panel can't do (camera, location, notifications…: kit.js HPEmbed)
-    return (f"{BASE}/{path}/" if path else f"{BASE}/") + "?hp=ha"
+    """The app's hub address, or a site's own (Wardyn): parsers/applist.py."""
+    return applist.panel_url(p, BASE)
 
 
 @callback

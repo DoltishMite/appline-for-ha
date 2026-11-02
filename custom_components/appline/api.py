@@ -7,6 +7,7 @@ from typing import Any
 import aiohttp
 
 from .const import APPS_URL, HEADERS, SYNC_URL
+from .parsers.applist import panel_apps
 from .hpcrypto import Keys
 
 
@@ -63,8 +64,5 @@ async def get_apps(session: aiohttp.ClientSession) -> list[dict[str, Any]]:
             j = await r.json(content_type=None)
     except (aiohttp.ClientError, TimeoutError, ValueError) as err:
         raise ApiError(f"can't reach the server ({type(err).__name__})") from err
-    apps = j.get("apps") if isinstance(j, dict) else j
-    # the launcher (Appline itself) is the hub's front page: its path is "" (launcher.hedgepig.uk/), not its id
-    return [{"id": a["id"], "name": a.get("name") or a["id"], "path": "" if a.get("launcher") else (a.get("path") or a["id"])}
-            for a in apps or [] if isinstance(a, dict) and isinstance(a.get("id"), str) and not a.get("hidden") and not a.get("draft")
-            and a.get("embed") is not False]   # "embed": false: can't work in a panel (the camera scanner, the games)
+    # the apps (the launcher at the hub's front page) and the sites of their own marked as panels (Wardyn): parsers/applist.py
+    return panel_apps(j)

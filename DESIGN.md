@@ -100,7 +100,14 @@ their HA link's checklist. Netline Agent rebuilds it each scan and writes the ti
 DevicesModule.ToHomeAssistant), so presence stays fresh with no page open. Home is worked out again from `last` each minute (20 minutes, as
 the agent), so a device stops being home when it stops being seen, even if no list arrives (the scanning computer off). Read-only.
 
+## Wardyn (0.7.0)
+Netline's network monitor became Wardyn (wardyn.hedgepig.uk), a site of its own on 2026-11-02, with the same data (siteline / speedline /
+pingline keys). Panels: kit/apps.json `sites` entries marked `"panel": true` are offered with the apps (parsers/applist.py, `panel_apps`), at their
+own address (only https://<name>.hedgepig.uk/; `panel_url`); Wardyn is `site-wardyn` (icon mdi:shield-check). Netline's panel is now its tools.
+The presence device is named Wardyn (app id still siteline, so entity ids don't change).
+
 ## Changelog
+- 0.7.0 (2026-11-02): Wardyn as a sidebar panel; the presence device is called Wardyn.
 - 0.6.0 (2026-10-27): Netline presence: each tracked device home or away (binary sensor, presence), and how many are home.
 - 0.5.1 (2026-10-15): Configure saves (Who's who, sidebar apps, calendars) apply without a reload, so entities no longer blink unavailable; only adding or removing a person reloads. A server that can't be reached for up to 30 minutes keeps the last copies (worked out afresh each minute) instead of making everything unavailable.
 - 0.5.0 (2026-10-14): Homeline, Plantline, Cookline; Carline Details; Binline They're out (+ calendar ✓), the same bins shown once across a household.

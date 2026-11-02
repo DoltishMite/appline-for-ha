@@ -25,7 +25,7 @@ def test_home_and_away():
     assert laptop.state is False and never.state is False and never.attrs["last_seen"] is None
     count = t["siteline.home"]
     assert (count.platform, count.kind, count.state) == (SENSOR, COUNT, 1)
-    assert out.devices["siteline"].name == "Netline"
+    assert out.devices["siteline"].name == "Wardyn"
 
 
 def test_edge_of_the_window():
