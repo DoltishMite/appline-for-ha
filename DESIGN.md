@@ -129,6 +129,7 @@ so it is fresh with no page open. The person turns it on in the HA link: Wardyn 
 the newest line of each node and network wins. Tested with the agent's own output for Wardyn's tour data (`tests/wardyn_agent.json`).
 
 ## Changelog
+- 0.8.1 (2026-11-03): the icon has an "HA" badge under it (brand/), to tell the integration apart from the apps.
 - 0.8.0 (2026-11-03): Wardyn's state: issues and a problem sensor, and per network and per node, their own devices and sensors (needs Wardyn Agent 2.10).
 - 0.7.0 (2026-11-02): Wardyn as a sidebar panel; the presence device is called Wardyn.
 - 0.6.0 (2026-10-27): Netline presence: each tracked device home or away (binary sensor, presence), and how many are home.
