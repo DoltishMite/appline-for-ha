@@ -6,12 +6,14 @@ Netline Agent rebuilds the list with every scan (about every 10 minutes) and put
 stays fresh with no page open. Home = seen in the last 20 minutes (as the agent works it out): worked out again here from `last`, so a
 device that stops being seen goes away even if no new list arrives (a computer switched off).
 Entities on the Netline device: per tracked device, home (binary_sensor, presence); how many are home (sensor, count).
+Wardyn's networks, nodes, updates, threats and checks (siteline_wardyn_v1, written by Wardyn Agent 2.10+): parsers/wardyn.py.
 """
 from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta
 
+from . import wardyn
 from .common import household, single, who
 from .model import BINARY, COUNT, PRESENCE, SENSOR, Device, Parsed, Thing
 
@@ -55,7 +57,9 @@ def _emit(ents: list[dict], now: datetime, out: Parsed, app_name: str | None) ->
 
 def parse(data: dict[str, str], shared: dict[str, dict], now: datetime, out: Parsed, app_name: str | None = None) -> None:
     _emit(single(APP, LIST_KEY, data, shared), now, out, app_name)
+    wardyn.emit([data], now, out, app_name, NAME)
 
 
 def parse_people(people, refs, shared_items, now, out, app_name=None) -> None:
     _emit(household(APP, LIST_KEY, people, refs, shared_items), now, out, app_name)
+    wardyn.emit([data for _, _, data in people], now, out, app_name, NAME)

@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 
 from . import ApplineConfigEntry
 from .entity import ApplineEntity
-from .parsers.model import COUNT, DAYS, DISTANCE, ENUM, SENSOR, TIMESTAMP
+from .parsers.model import COUNT, DAYS, DISTANCE, ENUM, LATENCY, SENSOR, TIMESTAMP
 from .platform import follow
 
 
@@ -28,6 +28,10 @@ class ApplineSensor(ApplineEntity, SensorEntity):
         elif t.kind == DISTANCE:   # an odometer reading, in miles (as the apps keep it)
             self._attr_device_class = SensorDeviceClass.DISTANCE
             self._attr_native_unit_of_measurement = UnitOfLength.MILES
+        elif t.kind == LATENCY:   # Wardyn: a network's internet latency
+            self._attr_device_class = SensorDeviceClass.DURATION
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+            self._attr_native_unit_of_measurement = UnitOfTime.MILLISECONDS
 
     @property
     def native_value(self):

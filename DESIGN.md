@@ -106,7 +106,30 @@ pingline keys). Panels: kit/apps.json `sites` entries marked `"panel": true` are
 own address (only https://<name>.hedgepig.uk/; `panel_url`); Wardyn is `site-wardyn` (icon mdi:shield-check). Netline's panel is now its tools.
 The presence device is named Wardyn (app id still siteline, so entity ids don't change).
 
+## Wardyn's state (0.8.0)
+| App | Device | Key | Entity | translation_key |
+|---|---|---|---|---|
+| Wardyn (`siteline`) | Wardyn | `siteline.issues` | sensor / count, `issues` [{ level, what, where }] | `wardyn_issues` |
+| | | `siteline.problem` | binary_sensor / problem: anything serious (internet down, active threats, no node connected) | `wardyn_problem` |
+| | | `siteline.nodes` | sensor / count: nodes connected, `not_connected` | `wardyn_nodes_connected` |
+| | | `siteline.updates` | sensor / count: updates waiting on every node, `security` | `wardyn_updates` |
+| | a network (`siteline.net.<router MAC hex>`) | `….internet` | binary_sensor / connectivity (a reading in the last 15 minutes that says up) | `net_internet` |
+| | | `….latency` | sensor / ms | `net_latency` |
+| | | `….outages` | sensor / count in 24 hours, `last_7_days` | `net_outages` |
+| | | `….devices` | sensor / count online, `known` | `net_devices_online` |
+| | a node (`siteline.node.<node id>`) | `….connected` | binary_sensor / connectivity (wrote in the last 15 minutes) | `node_connected` |
+| | | `….seen` | sensor / timestamp (off at first) | `node_last_seen` |
+| | | `….updates`, `….restart` | waiting (`security`, `held_or_put_off`, `failed_lately`); restart needed (problem) | `node_updates`, `node_restart` |
+| | | `….threats`, `….checks` | active threats (`antivirus_on`); checks failing (`failing`, `warnings`) | `node_threats`, `node_checks_failing` |
+Data: `siteline_wardyn_v1` (parsers/wardyn.py has the shape), written into the HA link copy by **each Wardyn Agent itself** (2.10+, site repo
+`agents/NetlineAgent/Home/HaModule.cs`: its own line at least every 5 minutes, and the networks it measures; the newest measurement wins),
+so it is fresh with no page open. The person turns it on in the HA link: Wardyn ✓ → "Networks, nodes, updates, threats and checks"
+(`tools_halink_v1` apps.siteline.wardyn, on unless false). A page sending the link carries the agents' key over and never makes it
+(kit `tools/halink.js` adapter `agent: […]`). Parts a node doesn't run have no entities. With several people sending the same Wardyn,
+the newest line of each node and network wins. Tested with the agent's own output for Wardyn's tour data (`tests/wardyn_agent.json`).
+
 ## Changelog
+- 0.8.0 (2026-11-03): Wardyn's state: issues and a problem sensor, and per network and per node, their own devices and sensors (needs Wardyn Agent 2.10).
 - 0.7.0 (2026-11-02): Wardyn as a sidebar panel; the presence device is called Wardyn.
 - 0.6.0 (2026-10-27): Netline presence: each tracked device home or away (binary sensor, presence), and how many are home.
 - 0.5.1 (2026-10-15): Configure saves (Who's who, sidebar apps, calendars) apply without a reload, so entities no longer blink unavailable; only adding or removing a person reloads. A server that can't be reached for up to 30 minutes keeps the last copies (worked out afresh each minute) instead of making everything unavailable.

@@ -1,0 +1,1 @@
+{"me":{"name":"Office PC","os":"Windows","ver":"2.10.0","nets":["b0:19:21:c9:02:68"],"checks":{"n":3,"bad":["Disk space"],"warn":["Restart pending"]},"upd":4,"held":1,"reboot":false,"failed":1,"sec":0,"threats":0,"av":true},"nets":{"b0:19:21:c9:02:68":{"name":"The network via 192.168.1.1","at":1793699880000,"up":true,"ms":9,"out24":2,"out7":2,"devs":3,"on":2}}}

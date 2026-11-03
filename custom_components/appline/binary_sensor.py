@@ -1,4 +1,4 @@
-"""Binary sensors: something needs attention (a pet that needs care now); a tracked device at home (Netline)."""
+"""Binary sensors: something needs attention (a pet that needs care now); a tracked device at home (Netline); connected (Wardyn)."""
 from __future__ import annotations
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 
 from . import ApplineConfigEntry
 from .entity import ApplineEntity
-from .parsers.model import BINARY, PRESENCE, PROBLEM
+from .parsers.model import BINARY, CONNECTIVITY, PRESENCE, PROBLEM
 from .platform import follow
 
 
@@ -17,6 +17,8 @@ class ApplineBinarySensor(ApplineEntity, BinarySensorEntity):
             self._attr_device_class = BinarySensorDeviceClass.PROBLEM
         elif self.thing.kind == PRESENCE:
             self._attr_device_class = BinarySensorDeviceClass.PRESENCE
+        elif self.thing.kind == CONNECTIVITY:
+            self._attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
 
     @property
     def is_on(self) -> bool | None:

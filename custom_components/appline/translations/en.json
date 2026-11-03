@@ -169,6 +169,36 @@
       },
       "devices_home": {
         "name": "Devices at home"
+      },
+      "wardyn_issues": {
+        "name": "Issues"
+      },
+      "wardyn_nodes_connected": {
+        "name": "Nodes connected"
+      },
+      "wardyn_updates": {
+        "name": "Updates waiting"
+      },
+      "net_latency": {
+        "name": "Internet latency"
+      },
+      "net_outages": {
+        "name": "Outages (24 hours)"
+      },
+      "net_devices_online": {
+        "name": "Devices online"
+      },
+      "node_last_seen": {
+        "name": "Last check-in"
+      },
+      "node_updates": {
+        "name": "Updates waiting"
+      },
+      "node_threats": {
+        "name": "Active threats"
+      },
+      "node_checks_failing": {
+        "name": "Checks failing"
       }
     },
     "binary_sensor": {
@@ -192,6 +222,18 @@
       },
       "device_home": {
         "name": "{name}"
+      },
+      "wardyn_problem": {
+        "name": "Problem"
+      },
+      "net_internet": {
+        "name": "Internet"
+      },
+      "node_connected": {
+        "name": "Connected"
+      },
+      "node_restart": {
+        "name": "Restart needed"
       }
     },
     "calendar": {

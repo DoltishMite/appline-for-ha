@@ -7,6 +7,8 @@ from typing import Any
 SENSOR, BINARY, CALENDAR, BUTTON = "sensor", "binary_sensor", "calendar", "button"
 ENUM, TIMESTAMP, COUNT, PROBLEM, EVENTS, PRESS = "enum", "timestamp", "count", "problem", "events", "press"
 PRESENCE = "presence"   # BINARY: home (on) or away (Netline's tracked devices)
+CONNECTIVITY = "connectivity"   # BINARY: connected (Wardyn: a network's internet, a node checking in)
+LATENCY = "latency"   # SENSOR: milliseconds (Wardyn: a network's internet latency)
 DAYS, LIST, DISTANCE = "days", "list", "distance"   # DAYS: a number of days (a duration); LIST: a to-do list (TODO)
 TODO = "todo"
 
